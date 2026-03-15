@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Gear Diagnostics</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f4f2ee;
+  --surface: #ffffff;
+  --surface2: #f9f8f6;
+  --border: rgba(0,0,0,0.1);
+  --border-mid: rgba(0,0,0,0.18);
+  --text: #1a1a18;
+  --muted: #767670;
+  --hint: #b0afa9;
+  --accent: #1a1a18;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+html { -webkit-tap-highlight-color: transparent; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 100px; }
+
+/* Header */
+.app-header { background: var(--accent); color: #fff; padding: 18px 20px 16px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 50; }
+.header-logo { width: 34px; height: 34px; border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.header-logo svg { width: 18px; height: 18px; }
+.header-text h1 { font-size: 16px; font-weight: 500; letter-spacing: -0.01em; }
+.header-text p { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 1px; }
+
+/* Body */
+.app-body { max-width: 760px; margin: 0 auto; padding: 20px 16px; }
+.card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 12px; }
+.card-label { font-size: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--hint); font-family: 'DM Mono', monospace; margin-bottom: 14px; }
+
+/* Fields */
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field.full { grid-column: 1 / -1; }
+.field label, label.sub { font-size: 12px; color: var(--muted); display: block; }
+input[type=text], input[type=date], textarea {
+  font-family: 'DM Sans', sans-serif; font-size: 15px;
+  background: var(--surface2); border: 0.5px solid var(--border-mid);
+  border-radius: var(--radius-sm); padding: 10px 12px;
+  color: var(--text); width: 100%; -webkit-appearance: none; outline: none;
+  transition: border-color 0.15s;
+}
+input:focus, textarea:focus { border-color: #888; }
+textarea { resize: vertical; min-height: 88px; line-height: 1.55; }
+
+/* Severity */
+.sev-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
+.sev-btn { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; padding: 9px 4px; border-radius: var(--radius-sm); border: 0.5px solid var(--border-mid); background: var(--surface2); color: var(--muted); cursor: pointer; text-align: center; transition: all 0.12s; }
+.sev-btn.sel-low     { background: #e8f4e0; border-color: #5a9940; color: #2d5c1e; }
+.sev-btn.sel-medium  { background: #fef3e2; border-color: #c9860a; color: #7a4f05; }
+.sev-btn.sel-high    { background: #fdeee6; border-color: #c25a2a; color: #7a2e0d; }
+.sev-btn.sel-critical{ background: #fce8e8; border-color: #b83232; color: #7a1a1a; }
+
+/* Checklist */
+.chk-list { display: flex; flex-direction: column; gap: 6px; }
+.chk-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--surface2); border: 0.5px solid var(--border); border-radius: var(--radius-sm); }
+.chk-name { flex: 1; font-size: 14px; }
+.chk-btns { display: flex; gap: 5px; }
+.chk-btn { font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; padding: 4px 11px; border-radius: 6px; border: 0.5px solid var(--border-mid); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.1s; }
+.chk-btn.pass   { background: #e8f4e0; border-color: #5a9940; color: #2d5c1e; }
+.chk-btn.fail   { background: #fce8e8; border-color: #b83232; color: #7a1a1a; }
+.chk-btn.na     { background: #ebebeb; border-color: #aaa; color: #555; }
+
+/* Photos */
+.photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.photo-slot { position: relative; border-radius: var(--radius-sm); overflow: hidden; border: 0.5px dashed var(--border-mid); background: var(--surface2); aspect-ratio: 4/3; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: border-color 0.15s; }
+.photo-slot:active { opacity: 0.8; }
+.photo-slot.filled { border-style: solid; }
+.photo-slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.photo-plus { font-size: 26px; color: var(--hint); line-height: 1; }
+.photo-add-text { font-size: 11px; color: var(--hint); margin-top: 4px; }
+.photo-del { position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; font-size: 13px; line-height: 22px; text-align: center; cursor: pointer; display: none; z-index: 3; }
+.photo-slot.filled .photo-del { display: block; }
+.photo-caption { margin-top: 6px; }
+.photo-caption input { font-size: 13px; padding: 7px 10px; }
+
+/* Signature */
+.sig-wrap { position: relative; }
+canvas#sig { width: 100%; height: 110px; display: block; border: 0.5px solid var(--border-mid); border-radius: var(--radius-sm); background: var(--surface2); cursor: crosshair; touch-action: none; }
+.sig-placeholder { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 13px; color: var(--hint); pointer-events: none; white-space: nowrap; }
+.btn-sm { font-family: 'DM Sans', sans-serif; font-size: 12px; background: transparent; border: 0.5px solid var(--border-mid); border-radius: 6px; padding: 5px 12px; cursor: pointer; color: var(--muted); margin-top: 7px; }
+
+/* Footer */
+.footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg); border-top: 0.5px solid var(--border); padding: 12px 16px; display: flex; gap: 10px; max-width: 760px; margin: 0 auto; z-index: 40; }
+.footer { left: 50%; transform: translateX(-50%); width: 100%; max-width: 760px; }
+.btn-generate { flex: 1; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 500; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); padding: 15px; cursor: pointer; letter-spacing: -0.01em; transition: opacity 0.15s; }
+.btn-generate:active { opacity: 0.8; }
+.btn-reset { font-family: 'DM Sans', sans-serif; font-size: 14px; background: transparent; border: 0.5px solid var(--border-mid); border-radius: var(--radius); padding: 15px 18px; cursor: pointer; color: var(--muted); }
+
+/* Toast */
+.toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(10px); background: #1a1a18; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 14px; border-radius: 100px; padding: 10px 22px; opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; white-space: nowrap; z-index: 999; }
+.toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 520px) {
+  .field-grid { grid-template-columns: 1fr; }
+  .photo-grid { grid-template-columns: repeat(2, 1fr); }
+  .sev-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-logo">
+    <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="9" cy="9" r="3.5" stroke="white" stroke-width="1.4"/>
+      <path d="M9 1.5v2M9 14.5v2M1.5 9h2M14.5 9h2M3.4 3.4l1.4 1.4M13.2 13.2l1.4 1.4M13.2 4.8l-1.4 1.4M4.8 13.2l-1.4 1.4" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="header-text">
+    <h1>Gear Diagnostics</h1>
+    <p>Inspection report</p>
+  </div>
+</header>
+
+<div class="app-body">
+
+  <div class="card">
+    <div class="card-label">Report details</div>
+    <div class="field-grid">
+      <div class="field"><label>Technician name</label><input type="text" id="tech-name" placeholder="e.g. Jan Novák" autocomplete="name"></div>
+      <div class="field"><label>Date</label><input type="date" id="rep-date"></div>
+      <div class="field"><label>Equipment ID</label><input type="text" id="gear-id" placeholder="e.g. EQ-2041"></div>
+      <div class="field"><label>Location / site</label><input type="text" id="location" placeholder="e.g. Warehouse B"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Fault description</div>
+    <div class="field full" style="margin-bottom:14px">
+      <label>Describe the issue</label>
+      <textarea id="fault" placeholder="Describe the fault, symptoms, or observations…"></textarea>
+    </div>
+    <label class="sub" style="margin-bottom:8px">Severity</label>
+    <div class="sev-grid">
+      <button class="sev-btn" data-val="Low"      onclick="pickSev(this,'sel-low')">Low</button>
+      <button class="sev-btn" data-val="Medium"   onclick="pickSev(this,'sel-medium')">Medium</button>
+      <button class="sev-btn" data-val="High"     onclick="pickSev(this,'sel-high')">High</button>
+      <button class="sev-btn" data-val="Critical" onclick="pickSev(this,'sel-critical')">Critical</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Checklist</div>
+    <div class="chk-list">
+      <div class="chk-row" data-item="Visual inspection"><span class="chk-name">Visual inspection</span><div class="chk-btns"><button class="chk-btn" onclick="pickCheck(this,'pass')">Pass</button><button class="chk-btn" onclick="pickCheck(this,'fail')">Fail</button><button class="chk-btn" onclick="pickCheck(this,'na')">N/A</button></div></div>
+      <div class="chk-row" data-item="Mechanical operation"><span class="chk-name">Mechanical operation</span><div class="chk-btns"><button class="chk-btn" onclick="pickCheck(this,'pass')">Pass</button><button class="chk-btn" onclick="pickCheck(this,'fail')">Fail</button><button class="chk-btn" onclick="pickCheck(this,'na')">N/A</button></div></div>
+      <div class="chk-row" data-item="Electrical systems"><span class="chk-name">Electrical systems</span><div class="chk-btns"><button class="chk-btn" onclick="pickCheck(this,'pass')">Pass</button><button class="chk-btn" onclick="pickCheck(this,'fail')">Fail</button><button class="chk-btn" onclick="pickCheck(this,'na')">N/A</button></div></div>
+      <div class="chk-row" data-item="Safety devices"><span class="chk-name">Safety devices</span><div class="chk-btns"><button class="chk-btn" onclick="pickCheck(this,'pass')">Pass</button><button class="chk-btn" onclick="pickCheck(this,'fail')">Fail</button><button class="chk-btn" onclick="pickCheck(this,'na')">N/A</button></div></div>
+      <div class="chk-row" data-item="Lubrication &amp; wear"><span class="chk-name">Lubrication &amp; wear</span><div class="chk-btns"><button class="chk-btn" onclick="pickCheck(this,'pass')">Pass</button><button class="chk-btn" onclick="pickCheck(this,'fail')">Fail</button><button class="chk-btn" onclick="pickCheck(this,'na')">N/A</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Photos</div>
+    <div class="photo-grid">
+      <div><div class="photo-slot" id="ps0" onclick="openPhoto(0)"><div class="photo-plus">+</div><div class="photo-add-text">Add photo</div><button class="photo-del" onclick="delPhoto(event,0)">✕</button></div><div class="photo-caption"><input type="text" id="cap0" placeholder="Caption (optional)"></div></div>
+      <div><div class="photo-slot" id="ps1" onclick="openPhoto(1)"><div class="photo-plus">+</div><div class="photo-add-text">Add photo</div><button class="photo-del" onclick="delPhoto(event,1)">✕</button></div><div class="photo-caption"><input type="text" id="cap1" placeholder="Caption (optional)"></div></div>
+      <div><div class="photo-slot" id="ps2" onclick="openPhoto(2)"><div class="photo-plus">+</div><div class="photo-add-text">Add photo</div><button class="photo-del" onclick="delPhoto(event,2)">✕</button></div><div class="photo-caption"><input type="text" id="cap2" placeholder="Caption (optional)"></div></div>
+    </div>
+    <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none" onchange="loadPhoto(event)">
+  </div>
+
+  <div class="card">
+    <div class="card-label">Signature</div>
+    <div class="sig-wrap">
+      <canvas id="sig" width="1200" height="220"></canvas>
+      <div class="sig-placeholder" id="sig-ph">Sign with your finger</div>
+    </div>
+    <button class="btn-sm" onclick="clearSig()">Clear signature</button>
+  </div>
+
+</div>
+
+<div class="footer">
+  <button class="btn-reset" onclick="resetForm()">Clear all</button>
+  <button class="btn-generate" onclick="makePDF()">Generate PDF report →</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// ── State ──────────────────────────────────────────────
+var severity = '';
+var photos = [null, null, null];
+var activeSlot = 0;
+var sigDrawing = false;
+var sigHasData = false;
+var sigCtx;
+
+// ── Init ───────────────────────────────────────────────
+document.getElementById('rep-date').value = new Date().toISOString().split('T')[0];
+
+var sigCanvas = document.getElementById('sig');
+sigCtx = sigCanvas.getContext('2d');
+sigCtx.strokeStyle = '#1a1a18';
+sigCtx.lineWidth = 2;
+sigCtx.lineCap = 'round';
+sigCtx.lineJoin = 'round';
+
+// ── Severity ───────────────────────────────────────────
+function pickSev(btn, cls) {
+  document.querySelectorAll('.sev-btn').forEach(function(b){ b.className = 'sev-btn'; });
+  btn.classList.add(cls);
+  severity = btn.dataset.val;
+}
+
+// ── Checklist ──────────────────────────────────────────
+function pickCheck(btn, state) {
+  btn.closest('.chk-btns').querySelectorAll('.chk-btn').forEach(function(b){ b.className = 'chk-btn'; });
+  btn.classList.add(state);
+}
+
+// ── Photos ─────────────────────────────────────────────
+function openPhoto(i) {
+  activeSlot = i;
+  var inp = document.getElementById('photo-input');
+  inp.value = '';
+  inp.click();
+}
+
+function loadPhoto(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    photos[activeSlot] = ev.target.result;
+    var slot = document.getElementById('ps' + activeSlot);
+    slot.classList.add('filled');
+    var img = slot.querySelector('img');
+    if (!img) { img = document.createElement('img'); slot.appendChild(img); }
+    img.src = ev.target.result;
+    slot.querySelector('.photo-plus').style.display = 'none';
+    slot.querySelector('.photo-add-text').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function delPhoto(e, i) {
+  e.stopPropagation();
+  photos[i] = null;
+  var slot = document.getElementById('ps' + i);
+  slot.classList.remove('filled');
+  var img = slot.querySelector('img');
+  if (img) img.remove();
+  slot.querySelector('.photo-plus').style.display = '';
+  slot.querySelector('.photo-add-text').style.display = '';
+  document.getElementById('cap' + i).value = '';
+}
+
+// ── Signature ──────────────────────────────────────────
+function getXY(canvas, e) {
+  var r = canvas.getBoundingClientRect();
+  var sx = canvas.width / r.width, sy = canvas.height / r.height;
+  var src = e.touches ? e.touches[0] : e;
+  return { x: (src.clientX - r.left) * sx, y: (src.clientY - r.top) * sy };
+}
+
+sigCanvas.addEventListener('mousedown', function(e){ sigDrawing = true; var p = getXY(sigCanvas,e); sigCtx.beginPath(); sigCtx.moveTo(p.x,p.y); });
+sigCanvas.addEventListener('mousemove', function(e){ if(!sigDrawing) return; var p = getXY(sigCanvas,e); sigCtx.lineTo(p.x,p.y); sigCtx.stroke(); sigHasData = true; document.getElementById('sig-ph').style.display='none'; });
+sigCanvas.addEventListener('mouseup', function(){ sigDrawing = false; });
+sigCanvas.addEventListener('mouseleave', function(){ sigDrawing = false; });
+sigCanvas.addEventListener('touchstart', function(e){ e.preventDefault(); sigDrawing=true; var p=getXY(sigCanvas,e); sigCtx.beginPath(); sigCtx.moveTo(p.x,p.y); },{passive:false});
+sigCanvas.addEventListener('touchmove', function(e){ e.preventDefault(); if(!sigDrawing) return; var p=getXY(sigCanvas,e); sigCtx.lineTo(p.x,p.y); sigCtx.stroke(); sigHasData=true; document.getElementById('sig-ph').style.display='none'; },{passive:false});
+sigCanvas.addEventListener('touchend', function(){ sigDrawing=false; });
+
+function clearSig() {
+  sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+  sigHasData = false;
+  document.getElementById('sig-ph').style.display = '';
+}
+
+// ── Toast ──────────────────────────────────────────────
+function toast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('visible');
+  setTimeout(function(){ t.classList.remove('visible'); }, 2800);
+}
+
+// ── Reset ──────────────────────────────────────────────
+function resetForm() {
+  ['tech-name','gear-id','location','fault'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('rep-date').value = new Date().toISOString().split('T')[0];
+  document.querySelectorAll('.sev-btn').forEach(function(b){ b.className='sev-btn'; });
+  severity = '';
+  document.querySelectorAll('.chk-btn').forEach(function(b){ b.className='chk-btn'; });
+  [0,1,2].forEach(function(i){ delPhoto({stopPropagation:function(){}}, i); });
+  clearSig();
+}
+
+// ── PDF ────────────────────────────────────────────────
+function makePDF() {
+  if (typeof window.jspdf === 'undefined') { toast('PDF library still loading — try again'); return; }
+  var { jsPDF } = window.jspdf;
+  var doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+  var techName  = document.getElementById('tech-name').value || '—';
+  var repDate   = document.getElementById('rep-date').value  || '—';
+  var gearId    = document.getElementById('gear-id').value   || '—';
+  var location  = document.getElementById('location').value  || '—';
+  var fault     = document.getElementById('fault').value     || '—';
+  var sev       = severity || '—';
+
+  var W = 210, M = 18, CW = W - M * 2;
+  var y = M;
+
+  // Header bar
+  doc.setFillColor(26, 26, 24);
+  doc.rect(0, 0, W, 30, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(15); doc.setFont('helvetica','bold');
+  doc.text('Gear Diagnostics', M, 13);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('Inspection Report', M, 21);
+  doc.text('Generated: ' + new Date().toLocaleDateString('en-GB'), W - M, 21, { align: 'right' });
+  y = 40;
+
+  function secBar(title) {
+    doc.setFillColor(244, 242, 238);
+    doc.rect(M, y, CW, 7, 'F');
+    doc.setTextColor(100,100,96);
+    doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+    doc.text(title.toUpperCase(), M + 3, y + 5);
+    y += 11;
+  }
+
+  function twoCol(l1, v1, l2, v2) {
+    var hw = CW / 2 - 4;
+    doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(130,130,126);
+    doc.text(l1, M, y);
+    doc.text(l2, M + CW/2, y);
+    doc.setFontSize(11); doc.setFont('helvetica','normal'); doc.setTextColor(26,26,24);
+    doc.text(String(v1), M, y + 5);
+    doc.text(String(v2), M + CW/2, y + 5);
+    y += 13;
+  }
+
+  // Section: details
+  secBar('Report details');
+  twoCol('Technician', techName, 'Date', repDate);
+  twoCol('Equipment ID', gearId, 'Location / site', location);
+
+  // Section: fault
+  secBar('Fault description');
+  var lines = doc.splitTextToSize(fault, CW - 4);
+  doc.setFontSize(11); doc.setFont('helvetica','normal'); doc.setTextColor(26,26,24);
+  doc.text(lines, M + 2, y);
+  y += lines.length * 5.5 + 5;
+
+  // Severity badge
+  var sevPalette = {
+    'Low':      { bg:[232,244,224], text:[45,92,30]  },
+    'Medium':   { bg:[254,243,226], text:[122,79,5]  },
+    'High':     { bg:[253,238,230], text:[122,46,13] },
+    'Critical': { bg:[252,232,232], text:[122,26,26] },
+    '—':        { bg:[235,235,235], text:[80,80,80]  }
+  };
+  var pal = sevPalette[sev] || sevPalette['—'];
+  doc.setFillColor(pal.bg[0], pal.bg[1], pal.bg[2]);
+  doc.roundedRect(M, y, 34, 8, 2, 2, 'F');
+  doc.setTextColor(pal.text[0], pal.text[1], pal.text[2]);
+  doc.setFontSize(9); doc.setFont('helvetica','bold');
+  doc.text(sev, M + 17, y + 5.5, { align: 'center' });
+  y += 14;
+
+  // Section: checklist
+  secBar('Checklist');
+  document.querySelectorAll('.chk-row').forEach(function(row) {
+    var label = row.dataset.item;
+    var active = row.querySelector('.chk-btn.pass, .chk-btn.fail, .chk-btn.na');
+    var status = active ? active.textContent.trim() : '—';
+    var statusColors = { 'Pass':[45,92,30], 'Fail':[122,26,26], 'N/A':[90,90,90], '—':[160,160,160] };
+    var sc = statusColors[status] || [160,160,160];
+
+    doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(26,26,24);
+    doc.text(label, M + 2, y);
+    doc.setTextColor(sc[0],sc[1],sc[2]); doc.setFont('helvetica','bold');
+    doc.text(status, W - M - 2, y, { align: 'right' });
+    y += 7;
+    doc.setDrawColor(220,220,216);
+    doc.line(M, y - 1.5, M + CW, y - 1.5);
+  });
+  y += 5;
+
+  // Section: photos
+  var filledPhotos = photos.filter(Boolean);
+  if (filledPhotos.length > 0) {
+    if (y > 215) { doc.addPage(); y = M; }
+    secBar('Photos');
+    var pw = (CW - 8) / 3;
+    var ph = pw * 0.75;
+    var px = M;
+    photos.forEach(function(pd, idx) {
+      if (!pd) return;
+      try {
+        var ext = pd.split(';')[0].split('/')[1].toUpperCase();
+        if (ext === 'JPEG') ext = 'JPEG';
+        doc.addImage(pd, ext, px, y, pw, ph, undefined, 'MEDIUM');
+        var cap = document.getElementById('cap' + idx).value;
+        if (cap) {
+          doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(110,110,106);
+          doc.text(cap, px + pw / 2, y + ph + 4, { align: 'center', maxWidth: pw });
+        }
+      } catch(err) {}
+      px += pw + 4;
+    });
+    y += ph + 14;
+  }
+
+  // Section: signature
+  if (sigHasData) {
+    if (y > 240) { doc.addPage(); y = M; }
+    secBar('Signature');
+    try {
+      doc.addImage(sigCanvas.toDataURL('image/png'), 'PNG', M, y, 85, 24);
+    } catch(e) {}
+    doc.setDrawColor(180,180,176);
+    doc.line(M, y + 28, M + 85, y + 28);
+    doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(130,130,126);
+    doc.text(techName, M, y + 33);
+    y += 38;
+  }
+
+  // Footer
+  var totalPages = doc.internal.getNumberOfPages();
+  for (var p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(180,180,175);
+    doc.text('Gear Diagnostics  |  ' + gearId + '  |  ' + repDate + '  |  Page ' + p + ' of ' + totalPages, W/2, 292, { align:'center' });
+  }
+
+  var fname = 'Diagnostics_' + gearId.replace(/\s+/g,'-') + '_' + repDate + '.pdf';
+  doc.save(fname);
+  toast('PDF downloaded — share via Files or OneDrive');
+}
+</script>
+</body>
+</html>
