@@ -3,20 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Gear Diagnostics</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Wikov Gear – Inspection Report</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg: #f4f2ee;
+  --bg: #f2f1ed;
   --surface: #ffffff;
-  --surface2: #f9f8f6;
-  --border: rgba(0,0,0,0.1);
-  --border-mid: rgba(0,0,0,0.18);
+  --surface2: #f7f6f3;
+  --border: rgba(0,0,0,0.09);
+  --border-mid: rgba(0,0,0,0.16);
   --text: #1a1a18;
-  --muted: #767670;
-  --hint: #b0afa9;
+  --muted: #72726c;
+  --hint: #aeada7;
   --accent: #1a1a18;
+  --wikov-red: #c0281e;
   --radius: 12px;
   --radius-sm: 8px;
 }
@@ -24,204 +25,561 @@ html { -webkit-tap-highlight-color: transparent; }
 body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 100px; }
 
 /* Header */
-.app-header { background: var(--accent); color: #fff; padding: 18px 20px 16px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 50; }
-.header-logo { width: 34px; height: 34px; border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.header-logo svg { width: 18px; height: 18px; }
-.header-text h1 { font-size: 16px; font-weight: 500; letter-spacing: -0.01em; }
-.header-text p { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 1px; }
+.app-header { background: var(--accent); padding: 0; position: sticky; top: 0; z-index: 50; }
+.header-top { display: flex; align-items: center; gap: 14px; padding: 14px 18px; }
+.header-logo { display: flex; align-items: center; gap: 10px; }
+.logo-mark { width: 32px; height: 32px; background: var(--wikov-red); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.logo-mark svg { width: 18px; height: 18px; }
+.logo-text { font-size: 15px; font-weight: 500; color: #fff; letter-spacing: -0.01em; }
+.logo-sub { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 1px; }
+.header-progress { background: rgba(255,255,255,0.08); height: 3px; }
+.progress-bar { height: 100%; background: var(--wikov-red); transition: width 0.4s ease; width: 0%; }
+
+/* Nav tabs */
+.section-nav { display: flex; overflow-x: auto; padding: 0 14px; gap: 2px; scrollbar-width: none; -ms-overflow-style: none; border-top: 0.5px solid rgba(255,255,255,0.1); }
+.section-nav::-webkit-scrollbar { display: none; }
+.nav-tab { flex-shrink: 0; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.45); background: transparent; border: none; padding: 9px 12px; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.15s; }
+.nav-tab.active { color: #fff; border-bottom-color: var(--wikov-red); }
+.nav-tab.done { color: rgba(255,255,255,0.65); }
+.nav-tab.done::after { content: ' ✓'; font-size: 10px; }
 
 /* Body */
-.app-body { max-width: 760px; margin: 0 auto; padding: 20px 16px; }
-.card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 12px; }
+.app-body { max-width: 780px; margin: 0 auto; padding: 18px 14px; }
+
+/* Section pages */
+.section-page { display: none; }
+.section-page.active { display: block; }
+
+/* Cards */
+.card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 12px; }
 .card-label { font-size: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--hint); font-family: 'DM Mono', monospace; margin-bottom: 14px; }
+.card-title { font-size: 16px; font-weight: 500; margin-bottom: 4px; }
+.card-desc { font-size: 13px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
 
 /* Fields */
-.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.field { display: flex; flex-direction: column; gap: 5px; }
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field-grid.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+.field { display: flex; flex-direction: column; gap: 4px; }
 .field.full { grid-column: 1 / -1; }
-.field label, label.sub { font-size: 12px; color: var(--muted); display: block; }
-input[type=text], input[type=date], textarea {
-  font-family: 'DM Sans', sans-serif; font-size: 15px;
+.field label { font-size: 12px; color: var(--muted); }
+input[type=text], input[type=date], textarea, select {
+  font-family: 'DM Sans', sans-serif; font-size: 14px;
   background: var(--surface2); border: 0.5px solid var(--border-mid);
-  border-radius: var(--radius-sm); padding: 10px 12px;
+  border-radius: var(--radius-sm); padding: 9px 11px;
   color: var(--text); width: 100%; -webkit-appearance: none; outline: none;
   transition: border-color 0.15s;
 }
-input:focus, textarea:focus { border-color: #888; }
-textarea { resize: vertical; min-height: 88px; line-height: 1.55; }
+input:focus, textarea:focus, select:focus { border-color: #888; }
+textarea { resize: vertical; min-height: 72px; line-height: 1.5; }
 
-/* Severity */
-.sev-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
-.sev-btn { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; padding: 9px 4px; border-radius: var(--radius-sm); border: 0.5px solid var(--border-mid); background: var(--surface2); color: var(--muted); cursor: pointer; text-align: center; transition: all 0.12s; }
-.sev-btn.sel-low     { background: #e8f4e0; border-color: #5a9940; color: #2d5c1e; }
-.sev-btn.sel-medium  { background: #fef3e2; border-color: #c9860a; color: #7a4f05; }
-.sev-btn.sel-high    { background: #fdeee6; border-color: #c25a2a; color: #7a2e0d; }
-.sev-btn.sel-critical{ background: #fce8e8; border-color: #b83232; color: #7a1a1a; }
+/* Findings table */
+.findings-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.findings-table th { text-align: left; font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--hint); padding: 0 8px 8px 0; border-bottom: 0.5px solid var(--border-mid); font-family: 'DM Mono', monospace; }
+.findings-table th:nth-child(2), .findings-table th:nth-child(3) { text-align: center; width: 48px; }
+.findings-table th:nth-child(4) { width: 35%; }
+.findings-table td { padding: 8px 8px 8px 0; border-bottom: 0.5px solid var(--border); vertical-align: middle; color: var(--text); }
+.findings-table tr:last-child td { border-bottom: none; }
+.findings-table td:nth-child(2), .findings-table td:nth-child(3) { text-align: center; }
 
-/* Checklist */
-.chk-list { display: flex; flex-direction: column; gap: 6px; }
-.chk-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--surface2); border: 0.5px solid var(--border); border-radius: var(--radius-sm); }
-.chk-name { flex: 1; font-size: 14px; }
-.chk-btns { display: flex; gap: 5px; }
-.chk-btn { font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; padding: 4px 11px; border-radius: 6px; border: 0.5px solid var(--border-mid); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.1s; }
-.chk-btn.pass   { background: #e8f4e0; border-color: #5a9940; color: #2d5c1e; }
-.chk-btn.fail   { background: #fce8e8; border-color: #b83232; color: #7a1a1a; }
-.chk-btn.na     { background: #ebebeb; border-color: #aaa; color: #555; }
+/* Yes/No toggle */
+.yn-group { display: flex; gap: 4px; justify-content: center; }
+.yn-btn { font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; width: 32px; height: 26px; border-radius: 5px; border: 0.5px solid var(--border-mid); background: transparent; color: var(--hint); cursor: pointer; transition: all 0.1s; }
+.yn-btn.yes.active { background: #e4f0d8; border-color: #5a9035; color: #2d5c1a; }
+.yn-btn.no.active  { background: #fce4e4; border-color: #b83030; color: #7a1a1a; }
+
+/* Remarks input */
+.remarks-input { font-family: 'DM Sans', sans-serif; font-size: 13px; background: var(--surface2); border: 0.5px solid var(--border-mid); border-radius: 5px; padding: 5px 8px; color: var(--text); width: 100%; outline: none; }
+.remarks-input:focus { border-color: #999; }
+
+/* Recommendation */
+.rec-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; padding-top: 14px; border-top: 0.5px solid var(--border); }
+.rec-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; width: 100%; }
+.rec-btn { font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; padding: 7px 12px; border-radius: var(--radius-sm); border: 0.5px solid var(--border-mid); background: var(--surface2); color: var(--muted); cursor: pointer; transition: all 0.12s; white-space: nowrap; }
+.rec-btn.sel-minimal  { background: #e4f0d8; border-color: #5a9035; color: #2d5c1a; }
+.rec-btn.sel-mild     { background: #fff8e1; border-color: #c9930a; color: #7a5205; }
+.rec-btn.sel-hard     { background: #fff0e0; border-color: #c06020; color: #7a3210; }
+.rec-btn.sel-critical { background: #fce4e4; border-color: #b83030; color: #7a1a1a; }
+
+/* Wear legend */
+.wear-legend { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.wear-pill { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 100px; }
+.wear-pill.minimal  { background: #e4f0d8; color: #2d5c1a; }
+.wear-pill.mild     { background: #fff8e1; color: #7a5205; }
+.wear-pill.hard     { background: #fff0e0; color: #7a3210; }
+.wear-pill.critical { background: #fce4e4; color: #7a1a1a; }
 
 /* Photos */
-.photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .photo-slot { position: relative; border-radius: var(--radius-sm); overflow: hidden; border: 0.5px dashed var(--border-mid); background: var(--surface2); aspect-ratio: 4/3; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: border-color 0.15s; }
-.photo-slot:active { opacity: 0.8; }
 .photo-slot.filled { border-style: solid; }
 .photo-slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.photo-plus { font-size: 26px; color: var(--hint); line-height: 1; }
-.photo-add-text { font-size: 11px; color: var(--hint); margin-top: 4px; }
-.photo-del { position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; font-size: 13px; line-height: 22px; text-align: center; cursor: pointer; display: none; z-index: 3; }
+.photo-plus { font-size: 22px; color: var(--hint); line-height: 1; }
+.photo-add-text { font-size: 11px; color: var(--hint); margin-top: 3px; }
+.photo-del { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; font-size: 11px; line-height: 20px; text-align: center; cursor: pointer; display: none; z-index: 3; }
 .photo-slot.filled .photo-del { display: block; }
-.photo-caption { margin-top: 6px; }
-.photo-caption input { font-size: 13px; padding: 7px 10px; }
+.photo-caption { margin-top: 5px; }
+.photo-caption input { font-size: 12px; padding: 6px 9px; }
 
 /* Signature */
 .sig-wrap { position: relative; }
-canvas#sig { width: 100%; height: 110px; display: block; border: 0.5px solid var(--border-mid); border-radius: var(--radius-sm); background: var(--surface2); cursor: crosshair; touch-action: none; }
+canvas.sig-canvas { width: 100%; height: 100px; display: block; border: 0.5px solid var(--border-mid); border-radius: var(--radius-sm); background: var(--surface2); cursor: crosshair; touch-action: none; }
 .sig-placeholder { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 13px; color: var(--hint); pointer-events: none; white-space: nowrap; }
 .btn-sm { font-family: 'DM Sans', sans-serif; font-size: 12px; background: transparent; border: 0.5px solid var(--border-mid); border-radius: 6px; padding: 5px 12px; cursor: pointer; color: var(--muted); margin-top: 7px; }
 
-/* Footer */
-.footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg); border-top: 0.5px solid var(--border); padding: 12px 16px; display: flex; gap: 10px; max-width: 760px; margin: 0 auto; z-index: 40; }
-.footer { left: 50%; transform: translateX(-50%); width: 100%; max-width: 760px; }
-.btn-generate { flex: 1; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 500; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); padding: 15px; cursor: pointer; letter-spacing: -0.01em; transition: opacity 0.15s; }
-.btn-generate:active { opacity: 0.8; }
-.btn-reset { font-family: 'DM Sans', sans-serif; font-size: 14px; background: transparent; border: 0.5px solid var(--border-mid); border-radius: var(--radius); padding: 15px 18px; cursor: pointer; color: var(--muted); }
+/* Conclusion table */
+.conclusion-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.conclusion-table th { font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--hint); padding: 0 8px 8px 0; border-bottom: 0.5px solid var(--border-mid); font-family: 'DM Mono', monospace; text-align: left; }
+.conclusion-table td { padding: 8px 8px 8px 0; border-bottom: 0.5px solid var(--border); font-size: 13px; }
+.conclusion-table tr:last-child td { border-bottom: none; }
+.conclusion-table .group-header td { font-size: 11px; font-weight: 500; color: var(--muted); background: var(--surface2); padding: 5px 8px; }
+.wear-badge { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 9px; border-radius: 100px; }
+.wb-minimal  { background: #e4f0d8; color: #2d5c1a; }
+.wb-mild     { background: #fff8e1; color: #7a5205; }
+.wb-hard     { background: #fff0e0; color: #7a3210; }
+.wb-critical { background: #fce4e4; color: #7a1a1a; }
+.wb-none     { background: var(--surface2); color: var(--hint); }
+
+/* Nav buttons */
+.nav-btns { display: flex; gap: 10px; padding: 0 14px; margin-bottom: 12px; max-width: 780px; margin-left: auto; margin-right: auto; }
+.btn-prev { font-family: 'DM Sans', sans-serif; font-size: 14px; background: transparent; border: 0.5px solid var(--border-mid); border-radius: var(--radius); padding: 13px 18px; cursor: pointer; color: var(--muted); }
+.btn-next { flex: 1; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); padding: 13px; cursor: pointer; transition: opacity 0.15s; }
+.btn-next:active { opacity: 0.8; }
+.btn-generate { flex: 1; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; background: var(--wikov-red); color: #fff; border: none; border-radius: var(--radius); padding: 13px; cursor: pointer; transition: opacity 0.15s; }
 
 /* Toast */
-.toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(10px); background: #1a1a18; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 14px; border-radius: 100px; padding: 10px 22px; opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; white-space: nowrap; z-index: 999; }
+.toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(10px); background: #1a1a18; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 14px; border-radius: 100px; padding: 10px 22px; opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; white-space: nowrap; z-index: 999; }
 .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-@media (max-width: 520px) {
-  .field-grid { grid-template-columns: 1fr; }
+@media (max-width: 540px) {
+  .field-grid, .field-grid.cols3 { grid-template-columns: 1fr; }
   .photo-grid { grid-template-columns: repeat(2, 1fr); }
-  .sev-grid { grid-template-columns: repeat(2, 1fr); }
+  .findings-table th:nth-child(4), .findings-table td:nth-child(4) { display: none; }
 }
 </style>
 </head>
 <body>
 
 <header class="app-header">
-  <div class="header-logo">
-    <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="9" cy="9" r="3.5" stroke="white" stroke-width="1.4"/>
-      <path d="M9 1.5v2M9 14.5v2M1.5 9h2M14.5 9h2M3.4 3.4l1.4 1.4M13.2 13.2l1.4 1.4M13.2 4.8l-1.4 1.4M4.8 13.2l-1.4 1.4" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
-    </svg>
+  <div class="header-top">
+    <div class="header-logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="3.5" stroke="white" stroke-width="1.5"/><path d="M9 1.5v2M9 14.5v2M1.5 9h2M14.5 9h2M3.4 3.4l1.4 1.4M13.2 13.2l1.4 1.4M13.2 4.8l-1.4 1.4M4.8 13.2l-1.4 1.4" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="logo-text">Wikov Gear</div>
+        <div class="logo-sub">Inspection Report</div>
+      </div>
+    </div>
   </div>
-  <div class="header-text">
-    <h1>Gear Diagnostics</h1>
-    <p>Inspection report</p>
-  </div>
+  <div class="header-progress"><div class="progress-bar" id="progress-bar"></div></div>
+  <nav class="section-nav" id="section-nav"></nav>
 </header>
 
-<div class="app-body">
-
-  <div class="card">
-    <div class="card-label">Report details</div>
-    <div class="field-grid">
-      <div class="field"><label>Technician name</label><input type="text" id="tech-name" placeholder="e.g. Jan Novák" autocomplete="name"></div>
-      <div class="field"><label>Date</label><input type="date" id="rep-date"></div>
-      <div class="field"><label>Equipment ID</label><input type="text" id="gear-id" placeholder="e.g. EQ-2041"></div>
-      <div class="field"><label>Location / site</label><input type="text" id="location" placeholder="e.g. Warehouse B"></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-label">Fault description</div>
-    <div class="field full" style="margin-bottom:14px">
-      <label>Describe the issue</label>
-      <textarea id="fault" placeholder="Describe the fault, symptoms, or observations…"></textarea>
-    </div>
-    <label class="sub" style="margin-bottom:8px">Severity</label>
-    <div class="sev-grid">
-      <button class="sev-btn" data-val="Low"      onclick="pickSev(this,'sel-low')">Low</button>
-      <button class="sev-btn" data-val="Medium"   onclick="pickSev(this,'sel-medium')">Medium</button>
-      <button class="sev-btn" data-val="High"     onclick="pickSev(this,'sel-high')">High</button>
-      <button class="sev-btn" data-val="Critical" onclick="pickSev(this,'sel-critical')">Critical</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-label">Checklist</div>
-    <div class="chk-list">
-      <div class="chk-row" data-item="Visual inspection"><span class="chk-name">Visual inspection</span><div class="chk-btns"><button class="chk-btn" onclick="pickCheck(this,'pass')">Pass</button><button class="chk-btn" onclick="pickCheck(this,'fail')">Fail</button><button class="chk-btn" onclick="pickCheck(this,'na')">N/A</button></div></div>
-      <div class="chk-row" data-item="Mechanical operation"><span class="chk-name">Mechanical operation</span><div class="chk-btns"><button class="chk-btn" onclick="pickCheck(this,'pass')">Pass</button><button class="chk-btn" onclick="pickCheck(this,'fail')">Fail</button><button class="chk-btn" onclick="pickCheck(this,'na')">N/A</button></div></div>
-      <div class="chk-row" data-item="Electrical systems"><span class="chk-name">Electrical systems</span><div class="chk-btns"><button class="chk-btn" onclick="pickCheck(this,'pass')">Pass</button><button class="chk-btn" onclick="pickCheck(this,'fail')">Fail</button><button class="chk-btn" onclick="pickCheck(this,'na')">N/A</button></div></div>
-      <div class="chk-row" data-item="Safety devices"><span class="chk-name">Safety devices</span><div class="chk-btns"><button class="chk-btn" onclick="pickCheck(this,'pass')">Pass</button><button class="chk-btn" onclick="pickCheck(this,'fail')">Fail</button><button class="chk-btn" onclick="pickCheck(this,'na')">N/A</button></div></div>
-      <div class="chk-row" data-item="Lubrication &amp; wear"><span class="chk-name">Lubrication &amp; wear</span><div class="chk-btns"><button class="chk-btn" onclick="pickCheck(this,'pass')">Pass</button><button class="chk-btn" onclick="pickCheck(this,'fail')">Fail</button><button class="chk-btn" onclick="pickCheck(this,'na')">N/A</button></div></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-label">Photos</div>
-    <div class="photo-grid">
-      <div><div class="photo-slot" id="ps0" onclick="openPhoto(0)"><div class="photo-plus">+</div><div class="photo-add-text">Add photo</div><button class="photo-del" onclick="delPhoto(event,0)">✕</button></div><div class="photo-caption"><input type="text" id="cap0" placeholder="Caption (optional)"></div></div>
-      <div><div class="photo-slot" id="ps1" onclick="openPhoto(1)"><div class="photo-plus">+</div><div class="photo-add-text">Add photo</div><button class="photo-del" onclick="delPhoto(event,1)">✕</button></div><div class="photo-caption"><input type="text" id="cap1" placeholder="Caption (optional)"></div></div>
-      <div><div class="photo-slot" id="ps2" onclick="openPhoto(2)"><div class="photo-plus">+</div><div class="photo-add-text">Add photo</div><button class="photo-del" onclick="delPhoto(event,2)">✕</button></div><div class="photo-caption"><input type="text" id="cap2" placeholder="Caption (optional)"></div></div>
-    </div>
-    <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none" onchange="loadPhoto(event)">
-  </div>
-
-  <div class="card">
-    <div class="card-label">Signature</div>
-    <div class="sig-wrap">
-      <canvas id="sig" width="1200" height="220"></canvas>
-      <div class="sig-placeholder" id="sig-ph">Sign with your finger</div>
-    </div>
-    <button class="btn-sm" onclick="clearSig()">Clear signature</button>
-  </div>
-
+<div class="app-body" id="app-body">
+  <!-- Sections injected by JS -->
 </div>
 
-<div class="footer">
-  <button class="btn-reset" onclick="resetForm()">Clear all</button>
-  <button class="btn-generate" onclick="makePDF()">Generate PDF report →</button>
+<div class="nav-btns" id="nav-btns">
+  <button class="btn-prev" id="btn-prev" onclick="goSection(-1)">← Back</button>
+  <button class="btn-next" id="btn-next" onclick="goSection(1)">Next →</button>
 </div>
 
 <div class="toast" id="toast"></div>
+<input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none" onchange="loadPhoto(event)">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-// ── State ──────────────────────────────────────────────
-var severity = '';
-var photos = [null, null, null];
-var activeSlot = 0;
+// ─────────────────────────────────────────────
+// DATA STRUCTURE
+// ─────────────────────────────────────────────
+
+var COMPONENTS = [
+  {
+    id: 'housing_front', label: 'Housing front',
+    findings: [
+      'Bearing bore LS-C RS', 'Connection Surfaces', 'Torque pins', 'Structure', 'Other'
+    ]
+  },
+  {
+    id: 'housing_rear', label: 'Housing rear',
+    findings: [
+      'Bearing bore LS-C GS', 'Bearing bore LS RS', 'Bearing bore LS GS',
+      'Bearing bore IMS RS', 'Bearing bore IMS GS',
+      'Bearing bore HSS RS', 'Bearing bore HSS GS',
+      'Connection Surfaces', 'Threads', 'Structure', 'Other'
+    ]
+  },
+  {
+    id: 'planet_carrier', label: 'Planet carrier',
+    findings: ['Input shaft', 'Bearing journals', 'Journals Bores', 'Structure', 'Other']
+  },
+  {
+    id: 'ring_gear', label: 'Ring gear',
+    findings: ['Gear teeth', 'Connection surface', 'NDT Inspection', 'Microgeometry', 'Others']
+  },
+  {
+    id: 'planets', label: 'Planets',
+    findings: ['Gear teeth', 'Inner diameters', 'NDT Inspection - teeth', 'Microgeometry', 'Other']
+  },
+  {
+    id: 'sun', label: 'Sun',
+    findings: ['Gear teeth', 'NDT Inspection - teeth', 'Microgeometry', 'Other']
+  },
+  {
+    id: 'sun_spline', label: 'Sun – splines',
+    findings: ['Spline teeth', 'NDT Inspection', 'Microgeometry']
+  },
+  {
+    id: 'ls_wheel', label: 'LS wheel',
+    findings: ['Gear teeth', 'Microgeometry', 'NDT Inspection', 'Other']
+  },
+  {
+    id: 'hollow_shaft', label: 'Hollow shaft',
+    findings: ['Spline teeth', 'Bearing journals', 'Other']
+  },
+  {
+    id: 'ims_pinion', label: 'IMS pinion',
+    findings: ['Gear teeth', 'Microgeometry', 'NDT Inspection', 'Bearing journals', 'Other']
+  },
+  {
+    id: 'ims_wheel', label: 'IMS wheel',
+    findings: ['Gear teeth', 'Microgeometry', 'NDT Inspection', 'Other']
+  },
+  {
+    id: 'hss_pinion', label: 'HSS pinion',
+    findings: ['Gear teeth', 'Microgeometry', 'NDT Inspection', 'Bearing journals']
+  }
+];
+
+var BEARING_ITEMS = ['LS-C-GS','LS-C-RS','LS-P','LSS-GS','LSS-RS','IMS-GS','IMS-RS','HSS-GS','HSS-RS'];
+
+var SECTIONS = ['overview', 'gearbox_details'].concat(COMPONENTS.map(function(c){ return c.id; })).concat(['bearings','conclusion','signoff']);
+
+var state = {
+  currentSection: 0,
+  overview: { project: '', customer: '', date: new Date().toISOString().split('T')[0], contact: '', contact_email: '', contact_phone: '' },
+  gearbox: { brand: 'Bosch-Rexroth', type: '', serial: '', power: '', speed: '' },
+  components: {},
+  bearings: {},
+  conclusion: { text: '' },
+  signoff: { location: 'Pilsen – Czech Republic', name: 'Martin Balíček', title: 'Service and Refurbishment Manager', sigData: null }
+};
+
+// Init component state
+COMPONENTS.forEach(function(comp) {
+  state.components[comp.id] = {
+    description: '',
+    findings: {},
+    recommendation: '',
+    photos: [null, null, null],
+    captions: ['','','']
+  };
+  comp.findings.forEach(function(f) {
+    state.components[comp.id].findings[f] = { yes: false, no: false, remarks: '' };
+  });
+});
+
+BEARING_ITEMS.forEach(function(b) {
+  state.bearings[b] = { replace: false };
+});
+
+// ─────────────────────────────────────────────
+// RENDER ENGINE
+// ─────────────────────────────────────────────
+var activePhotoComp = null;
+var activePhotoSlot = 0;
+var sigCanvases = {};
+var sigContexts = {};
 var sigDrawing = false;
-var sigHasData = false;
-var sigCtx;
+var sigHasData = {};
 
-// ── Init ───────────────────────────────────────────────
-document.getElementById('rep-date').value = new Date().toISOString().split('T')[0];
+function buildUI() {
+  buildNav();
+  buildSections();
+  updateNav();
+}
 
-var sigCanvas = document.getElementById('sig');
-sigCtx = sigCanvas.getContext('2d');
-sigCtx.strokeStyle = '#1a1a18';
-sigCtx.lineWidth = 2;
-sigCtx.lineCap = 'round';
-sigCtx.lineJoin = 'round';
+function buildNav() {
+  var nav = document.getElementById('section-nav');
+  var labels = ['Overview', 'Gearbox'].concat(COMPONENTS.map(function(c){ return c.label; })).concat(['Bearings','Conclusion','Sign-off']);
+  nav.innerHTML = labels.map(function(l, i) {
+    return '<button class="nav-tab" data-idx="'+i+'" onclick="jumpSection('+i+')">'+l+'</button>';
+  }).join('');
+}
 
-// ── Severity ───────────────────────────────────────────
-function pickSev(btn, cls) {
-  document.querySelectorAll('.sev-btn').forEach(function(b){ b.className = 'sev-btn'; });
+function buildSections() {
+  var body = document.getElementById('app-body');
+  var html = '';
+
+  // 0: Overview
+  html += '<div class="section-page" id="sec-0">';
+  html += '<div class="card"><div class="card-label">Project overview</div>';
+  html += '<div class="field-grid">';
+  html += field('project','Project name','e.g. Bosch-Rexroth Gearbox Overhaul','text','overview','project');
+  html += field('customer','Customer','e.g. PPC Renewables Romania S.R.L','text','overview','customer');
+  html += field('rep-date','Date of inspection','','date','overview','date');
+  html += '</div></div>';
+  html += '<div class="card"><div class="card-label">Wikov contact</div>';
+  html += '<div class="field-grid">';
+  html += field('contact-name','Contact name','e.g. Martin Balíček','text','overview','contact');
+  html += field('contact-phone','Phone','e.g. +420 724 173 xxx','text','overview','contact_phone');
+  html += field('contact-email','Email','e.g. mbalicek@wikov.com','text','overview','contact_email');
+  html += '</div></div>';
+  html += '</div>';
+
+  // 1: Gearbox details
+  html += '<div class="section-page" id="sec-1">';
+  html += '<div class="card"><div class="card-label">Gearbox specification</div>';
+  html += '<div class="field-grid">';
+  html += field('gb-brand','Brand / Manufacturer','e.g. Bosch-Rexroth','text','gearbox','brand');
+  html += field('gb-type','Unit type','e.g. GPV442','text','gearbox','type');
+  html += field('gb-serial','Serial no.','e.g. 1383233','text','gearbox','serial');
+  html += field('gb-power','Power [kW]','e.g. 2000','text','gearbox','power');
+  html += field('gb-speed','Input speed [rpm]','e.g. 14.85','text','gearbox','speed');
+  html += '</div></div>';
+  html += '</div>';
+
+  // Component sections (2 … 2+n)
+  COMPONENTS.forEach(function(comp, ci) {
+    var si = ci + 2;
+    html += '<div class="section-page" id="sec-'+si+'">';
+    html += '<div class="card">';
+    html += '<div class="card-label">Component</div>';
+    html += '<div class="card-title">'+comp.label+'</div>';
+    html += '<div class="field" style="margin-top:10px"><label>Description / observations</label>';
+    html += '<textarea id="desc-'+comp.id+'" placeholder="Describe findings for '+comp.label+'…" onchange="saveDesc(\''+comp.id+'\',this.value)"></textarea></div>';
+    html += '</div>';
+
+    // Findings table
+    html += '<div class="card"><div class="card-label">Findings – '+comp.label+'</div>';
+    html += '<table class="findings-table"><thead><tr><th>Item</th><th>Yes</th><th>No</th><th>Remarks</th></tr></thead><tbody>';
+    comp.findings.forEach(function(f) {
+      var fid = comp.id + '_' + f.replace(/[^a-z0-9]/gi,'_');
+      html += '<tr>';
+      html += '<td>'+f+'</td>';
+      html += '<td><div class="yn-group"><button class="yn-btn yes" id="yn-yes-'+fid+'" onclick="setYN(\''+comp.id+'\',\''+f+'\',\'yes\')">Y</button></div></td>';
+      html += '<td><div class="yn-group"><button class="yn-btn no" id="yn-no-'+fid+'" onclick="setYN(\''+comp.id+'\',\''+f+'\',\'no\')">N</button></div></td>';
+      html += '<td><input class="remarks-input" id="rem-'+fid+'" placeholder="Remarks" onchange="saveRemark(\''+comp.id+'\',\''+f+'\',this.value)"></td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+
+    // Recommendation
+    html += '<div class="rec-row">';
+    html += '<div class="rec-label">Wikov recommendation</div>';
+    html += '<button class="rec-btn" data-rec="Minimal wear – reuse" data-comp="'+comp.id+'" onclick="setRec(this)">Minimal wear – reuse</button>';
+    html += '<button class="rec-btn" data-rec="Mild wear – reuse" data-comp="'+comp.id+'" onclick="setRec(this)">Mild wear – reuse</button>';
+    html += '<button class="rec-btn" data-rec="Hard wear – refurbish" data-comp="'+comp.id+'" onclick="setRec(this)">Hard wear – refurbish</button>';
+    html += '<button class="rec-btn" data-rec="Critical wear – replace" data-comp="'+comp.id+'" onclick="setRec(this)">Critical wear – replace</button>';
+    html += '</div></div>';
+
+    // Photos
+    html += '<div class="card"><div class="card-label">Photos – '+comp.label+'</div>';
+    html += '<div class="photo-grid">';
+    for (var pi = 0; pi < 3; pi++) {
+      html += '<div>';
+      html += '<div class="photo-slot" id="ps-'+comp.id+'-'+pi+'" onclick="openPhoto(\''+comp.id+'\','+pi+')">';
+      html += '<div class="photo-plus">+</div><div class="photo-add-text">Add photo</div>';
+      html += '<button class="photo-del" onclick="delPhoto(event,\''+comp.id+'\','+pi+')">✕</button>';
+      html += '</div>';
+      html += '<div class="photo-caption"><input type="text" id="cap-'+comp.id+'-'+pi+'" placeholder="Caption" onchange="saveCap(\''+comp.id+'\','+pi+',this.value)"></div>';
+      html += '</div>';
+    }
+    html += '</div></div>';
+    html += '</div>'; // section-page
+  });
+
+  // Bearings section
+  var bsi = COMPONENTS.length + 2;
+  html += '<div class="section-page" id="sec-'+bsi+'">';
+  html += '<div class="card"><div class="card-label">Bearings</div>';
+  html += '<div class="card-desc">According to customer requirements, mark bearings for replacement.</div>';
+  html += '<table class="findings-table"><thead><tr><th>Bearing</th><th>Replace</th><th></th><th>Notes</th></tr></thead><tbody>';
+  BEARING_ITEMS.forEach(function(b) {
+    var bid = b.replace(/[^a-z0-9]/gi,'_');
+    html += '<tr><td>'+b+'</td>';
+    html += '<td><div class="yn-group"><button class="yn-btn yes" id="br-'+bid+'" onclick="setBearing(\''+b+'\',this)">Y</button></div></td>';
+    html += '<td></td><td></td></tr>';
+  });
+  html += '</tbody></table></div></div>';
+
+  // Conclusion section
+  var csi = COMPONENTS.length + 3;
+  html += '<div class="section-page" id="sec-'+csi+'">';
+  html += '<div class="card"><div class="card-label">Overview</div>';
+  html += '<div class="wear-legend">';
+  html += '<span class="wear-pill minimal">Minimal wear</span>';
+  html += '<span class="wear-pill mild">Mild wear</span>';
+  html += '<span class="wear-pill hard">Hard wear</span>';
+  html += '<span class="wear-pill critical">Critical wear</span>';
+  html += '</div>';
+  html += '<table class="conclusion-table" id="conclusion-table">';
+  html += '<thead><tr><th>Component</th><th>Recommendation</th></tr></thead>';
+  html += '<tbody id="conclusion-body"></tbody></table></div>';
+  html += '<div class="card"><div class="card-label">Recommendation text</div>';
+  html += '<div class="field"><label>Summary recommendation</label>';
+  html += '<textarea id="conclusion-text" style="min-height:110px" placeholder="Write overall recommendation…" onchange="state.conclusion.text=this.value"></textarea></div></div>';
+  html += '</div>';
+
+  // Sign-off
+  var ssi = COMPONENTS.length + 4;
+  html += '<div class="section-page" id="sec-'+ssi+'">';
+  html += '<div class="card"><div class="card-label">Sign-off details</div>';
+  html += '<div class="field-grid">';
+  html += '<div class="field"><label>Location</label><input type="text" id="so-location" value="Pilsen – Czech Republic" onchange="state.signoff.location=this.value"></div>';
+  html += '<div class="field"><label>Date</label><input type="date" id="so-date" onchange="state.signoff.date=this.value"></div>';
+  html += '<div class="field"><label>Name</label><input type="text" id="so-name" value="Martin Balíček" onchange="state.signoff.name=this.value"></div>';
+  html += '<div class="field"><label>Title</label><input type="text" id="so-title" value="Service and Refurbishment Manager" onchange="state.signoff.title=this.value"></div>';
+  html += '</div></div>';
+  html += '<div class="card"><div class="card-label">Signature</div>';
+  html += '<div class="sig-wrap"><canvas class="sig-canvas" id="sig-canvas" width="1400" height="220"></canvas>';
+  html += '<div class="sig-placeholder" id="sig-ph">Sign with your finger</div></div>';
+  html += '<button class="btn-sm" onclick="clearSig()">Clear signature</button>';
+  html += '</div></div>';
+
+  body.innerHTML = html;
+
+  // Set default dates
+  document.getElementById('rep-date').value = state.overview.date;
+  document.getElementById('so-date').value = state.overview.date;
+
+  // Init signature canvas
+  initSig();
+}
+
+function field(id, label, placeholder, type, group, key) {
+  var val = group && key ? (state[group] ? state[group][key] || '' : '') : '';
+  var changeHandler = group && key ? 'onchange="state.'+group+'.'+key+'=this.value"' : '';
+  if (type === 'date') {
+    return '<div class="field"><label>'+label+'</label><input type="date" id="'+id+'" value="'+val+'" '+changeHandler+'></div>';
+  }
+  return '<div class="field"><label>'+label+'</label><input type="text" id="'+id+'" placeholder="'+placeholder+'" value="'+val+'" '+changeHandler+'></div>';
+}
+
+// ─────────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────────
+var totalSections = 0;
+
+function updateNav() {
+  totalSections = SECTIONS.length;
+  var idx = state.currentSection;
+
+  // Show/hide pages
+  document.querySelectorAll('.section-page').forEach(function(p, i) {
+    p.classList.toggle('active', i === idx);
+  });
+
+  // Update nav tabs
+  document.querySelectorAll('.nav-tab').forEach(function(t, i) {
+    t.classList.toggle('active', i === idx);
+  });
+
+  // Scroll active tab into view
+  var activeTab = document.querySelector('.nav-tab.active');
+  if (activeTab) activeTab.scrollIntoView({ inline: 'center', behavior: 'smooth' });
+
+  // Progress bar
+  document.getElementById('progress-bar').style.width = ((idx / (totalSections - 1)) * 100) + '%';
+
+  // Buttons
+  var prevBtn = document.getElementById('btn-prev');
+  var nextBtn = document.getElementById('btn-next');
+  prevBtn.style.display = idx === 0 ? 'none' : '';
+
+  var isLast = idx === totalSections - 1;
+  nextBtn.textContent = isLast ? '' : 'Next →';
+  nextBtn.className = isLast ? 'btn-generate' : 'btn-next';
+  nextBtn.onclick = isLast ? makePDF : function(){ goSection(1); };
+  if (isLast) nextBtn.textContent = 'Generate PDF report →';
+
+  // Refresh conclusion if on that section
+  var conclusionIdx = COMPONENTS.length + 3;
+  if (idx === conclusionIdx) refreshConclusion();
+
+  window.scrollTo(0, 0);
+}
+
+function goSection(dir) {
+  var next = state.currentSection + dir;
+  if (next < 0 || next >= SECTIONS.length) return;
+  state.currentSection = next;
+  updateNav();
+}
+
+function jumpSection(i) {
+  state.currentSection = i;
+  updateNav();
+}
+
+// ─────────────────────────────────────────────
+// STATE HELPERS
+// ─────────────────────────────────────────────
+function saveDesc(compId, val) { state.components[compId].description = val; }
+function saveCap(compId, idx, val) { state.components[compId].captions[idx] = val; }
+function saveRemark(compId, finding, val) { state.components[compId].findings[finding].remarks = val; }
+
+function setYN(compId, finding, which) {
+  var f = state.components[compId].findings[finding];
+  var fid = compId + '_' + finding.replace(/[^a-z0-9]/gi,'_');
+  if (which === 'yes') {
+    f.yes = !f.yes; f.no = false;
+    document.getElementById('yn-yes-'+fid).classList.toggle('active', f.yes);
+    document.getElementById('yn-no-'+fid).classList.remove('active');
+  } else {
+    f.no = !f.no; f.yes = false;
+    document.getElementById('yn-no-'+fid).classList.toggle('active', f.no);
+    document.getElementById('yn-yes-'+fid).classList.remove('active');
+  }
+}
+
+function setBearing(name, btn) {
+  var b = state.bearings[name];
+  b.replace = !b.replace;
+  btn.classList.toggle('active', b.replace);
+}
+
+function setRec(btn) {
+  var compId = btn.dataset.comp;
+  var rec = btn.dataset.rec;
+  state.components[compId].recommendation = rec;
+  btn.closest('.rec-row').querySelectorAll('.rec-btn').forEach(function(b){ b.className = 'rec-btn'; });
+  var cls = rec.includes('Minimal') ? 'sel-minimal' : rec.includes('Mild') ? 'sel-mild' : rec.includes('Hard') ? 'sel-hard' : 'sel-critical';
   btn.classList.add(cls);
-  severity = btn.dataset.val;
 }
 
-// ── Checklist ──────────────────────────────────────────
-function pickCheck(btn, state) {
-  btn.closest('.chk-btns').querySelectorAll('.chk-btn').forEach(function(b){ b.className = 'chk-btn'; });
-  btn.classList.add(state);
+function refreshConclusion() {
+  var tbody = document.getElementById('conclusion-body');
+  if (!tbody) return;
+  var castings = COMPONENTS.slice(0,3);
+  var gears = COMPONENTS.slice(3,12);
+
+  function row(comp) {
+    var rec = state.components[comp.id].recommendation;
+    var cls = rec.includes('Minimal') ? 'wb-minimal' : rec.includes('Mild') ? 'wb-mild' : rec.includes('Hard') ? 'wb-hard' : rec.includes('Critical') ? 'wb-critical' : 'wb-none';
+    var badge = rec ? '<span class="wear-badge '+cls+'">'+rec+'</span>' : '<span class="wear-badge wb-none">—</span>';
+    return '<tr><td>'+comp.label+'</td><td>'+badge+'</td></tr>';
+  }
+
+  var html = '<tr class="group-header"><td colspan="2">Castings</td></tr>';
+  castings.forEach(function(c){ html += row(c); });
+  html += '<tr class="group-header"><td colspan="2">Gears</td></tr>';
+  gears.forEach(function(c){ html += row(c); });
+  html += '<tr class="group-header"><td colspan="2">Bearings</td></tr>';
+  BEARING_ITEMS.forEach(function(b) {
+    var replace = state.bearings[b].replace;
+    var badge = replace ? '<span class="wear-badge wb-hard">Replace</span>' : '<span class="wear-badge wb-none">—</span>';
+    html += '<tr><td>'+b+'</td><td>'+badge+'</td></tr>';
+  });
+  tbody.innerHTML = html;
 }
 
-// ── Photos ─────────────────────────────────────────────
-function openPhoto(i) {
-  activeSlot = i;
+// ─────────────────────────────────────────────
+// PHOTOS
+// ─────────────────────────────────────────────
+function openPhoto(compId, slot) {
+  activePhotoComp = compId;
+  activePhotoSlot = slot;
   var inp = document.getElementById('photo-input');
   inp.value = '';
   inp.click();
@@ -229,11 +587,11 @@ function openPhoto(i) {
 
 function loadPhoto(e) {
   var file = e.target.files[0];
-  if (!file) return;
+  if (!file || !activePhotoComp) return;
   var reader = new FileReader();
   reader.onload = function(ev) {
-    photos[activeSlot] = ev.target.result;
-    var slot = document.getElementById('ps' + activeSlot);
+    state.components[activePhotoComp].photos[activePhotoSlot] = ev.target.result;
+    var slot = document.getElementById('ps-'+activePhotoComp+'-'+activePhotoSlot);
     slot.classList.add('filled');
     var img = slot.querySelector('img');
     if (!img) { img = document.createElement('img'); slot.appendChild(img); }
@@ -244,41 +602,59 @@ function loadPhoto(e) {
   reader.readAsDataURL(file);
 }
 
-function delPhoto(e, i) {
+function delPhoto(e, compId, slot) {
   e.stopPropagation();
-  photos[i] = null;
-  var slot = document.getElementById('ps' + i);
-  slot.classList.remove('filled');
-  var img = slot.querySelector('img');
-  if (img) img.remove();
-  slot.querySelector('.photo-plus').style.display = '';
-  slot.querySelector('.photo-add-text').style.display = '';
-  document.getElementById('cap' + i).value = '';
+  state.components[compId].photos[slot] = null;
+  state.components[compId].captions[slot] = '';
+  var s = document.getElementById('ps-'+compId+'-'+slot);
+  s.classList.remove('filled');
+  var img = s.querySelector('img'); if (img) img.remove();
+  s.querySelector('.photo-plus').style.display = '';
+  s.querySelector('.photo-add-text').style.display = '';
+  document.getElementById('cap-'+compId+'-'+slot).value = '';
 }
 
-// ── Signature ──────────────────────────────────────────
-function getXY(canvas, e) {
-  var r = canvas.getBoundingClientRect();
-  var sx = canvas.width / r.width, sy = canvas.height / r.height;
-  var src = e.touches ? e.touches[0] : e;
-  return { x: (src.clientX - r.left) * sx, y: (src.clientY - r.top) * sy };
-}
+// ─────────────────────────────────────────────
+// SIGNATURE
+// ─────────────────────────────────────────────
+var sigDrawingActive = false;
+var sigHasContent = false;
 
-sigCanvas.addEventListener('mousedown', function(e){ sigDrawing = true; var p = getXY(sigCanvas,e); sigCtx.beginPath(); sigCtx.moveTo(p.x,p.y); });
-sigCanvas.addEventListener('mousemove', function(e){ if(!sigDrawing) return; var p = getXY(sigCanvas,e); sigCtx.lineTo(p.x,p.y); sigCtx.stroke(); sigHasData = true; document.getElementById('sig-ph').style.display='none'; });
-sigCanvas.addEventListener('mouseup', function(){ sigDrawing = false; });
-sigCanvas.addEventListener('mouseleave', function(){ sigDrawing = false; });
-sigCanvas.addEventListener('touchstart', function(e){ e.preventDefault(); sigDrawing=true; var p=getXY(sigCanvas,e); sigCtx.beginPath(); sigCtx.moveTo(p.x,p.y); },{passive:false});
-sigCanvas.addEventListener('touchmove', function(e){ e.preventDefault(); if(!sigDrawing) return; var p=getXY(sigCanvas,e); sigCtx.lineTo(p.x,p.y); sigCtx.stroke(); sigHasData=true; document.getElementById('sig-ph').style.display='none'; },{passive:false});
-sigCanvas.addEventListener('touchend', function(){ sigDrawing=false; });
+function initSig() {
+  var canvas = document.getElementById('sig-canvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#1a1a18';
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  function pos(e) {
+    var r = canvas.getBoundingClientRect();
+    var sx = canvas.width / r.width, sy = canvas.height / r.height;
+    var src = e.touches ? e.touches[0] : e;
+    return { x: (src.clientX - r.left)*sx, y: (src.clientY - r.top)*sy };
+  }
+  canvas.addEventListener('mousedown', function(e){ sigDrawingActive=true; var p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); });
+  canvas.addEventListener('mousemove', function(e){ if(!sigDrawingActive) return; var p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); sigHasContent=true; document.getElementById('sig-ph').style.display='none'; });
+  canvas.addEventListener('mouseup', function(){ sigDrawingActive=false; });
+  canvas.addEventListener('mouseleave', function(){ sigDrawingActive=false; });
+  canvas.addEventListener('touchstart', function(e){ e.preventDefault(); sigDrawingActive=true; var p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); },{passive:false});
+  canvas.addEventListener('touchmove', function(e){ e.preventDefault(); if(!sigDrawingActive) return; var p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); sigHasContent=true; document.getElementById('sig-ph').style.display='none'; },{passive:false});
+  canvas.addEventListener('touchend', function(){ sigDrawingActive=false; });
+}
 
 function clearSig() {
-  sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-  sigHasData = false;
-  document.getElementById('sig-ph').style.display = '';
+  var canvas = document.getElementById('sig-canvas');
+  if (!canvas) return;
+  canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+  sigHasContent = false;
+  document.getElementById('sig-ph').style.display='';
 }
 
-// ── Toast ──────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────────
 function toast(msg) {
   var t = document.getElementById('toast');
   t.textContent = msg;
@@ -286,162 +662,305 @@ function toast(msg) {
   setTimeout(function(){ t.classList.remove('visible'); }, 2800);
 }
 
-// ── Reset ──────────────────────────────────────────────
-function resetForm() {
-  ['tech-name','gear-id','location','fault'].forEach(function(id){ document.getElementById(id).value=''; });
-  document.getElementById('rep-date').value = new Date().toISOString().split('T')[0];
-  document.querySelectorAll('.sev-btn').forEach(function(b){ b.className='sev-btn'; });
-  severity = '';
-  document.querySelectorAll('.chk-btn').forEach(function(b){ b.className='chk-btn'; });
-  [0,1,2].forEach(function(i){ delPhoto({stopPropagation:function(){}}, i); });
-  clearSig();
-}
-
-// ── PDF ────────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// PDF GENERATION
+// ─────────────────────────────────────────────
 function makePDF() {
-  if (typeof window.jspdf === 'undefined') { toast('PDF library still loading — try again'); return; }
+  if (typeof window.jspdf === 'undefined') { toast('PDF library loading — try again in a moment'); return; }
   var { jsPDF } = window.jspdf;
   var doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  var W = 210, M = 16, CW = W - M * 2;
+  var y = 0;
 
-  var techName  = document.getElementById('tech-name').value || '—';
-  var repDate   = document.getElementById('rep-date').value  || '—';
-  var gearId    = document.getElementById('gear-id').value   || '—';
-  var location  = document.getElementById('location').value  || '—';
-  var fault     = document.getElementById('fault').value     || '—';
-  var sev       = severity || '—';
+  // Read sign-off fields from DOM
+  var soLocation = document.getElementById('so-location').value || state.signoff.location;
+  var soDate = document.getElementById('so-date').value || state.overview.date;
+  var soName = document.getElementById('so-name').value || state.signoff.name;
+  var soTitle = document.getElementById('so-title').value || state.signoff.title;
+  var overviewProject = document.getElementById('project').value || state.overview.project;
+  var overviewCustomer = document.getElementById('customer').value || state.overview.customer;
+  var overviewDate = document.getElementById('rep-date').value || state.overview.date;
+  var overviewContact = document.getElementById('contact-name').value || state.overview.contact;
+  var overviewEmail = document.getElementById('contact-email').value || state.overview.contact_email;
+  var gbBrand = document.getElementById('gb-brand').value || state.gearbox.brand;
+  var gbType = document.getElementById('gb-type').value || state.gearbox.type;
+  var gbSerial = document.getElementById('gb-serial').value || state.gearbox.serial;
+  var gbPower = document.getElementById('gb-power').value || state.gearbox.power;
+  var gbSpeed = document.getElementById('gb-speed').value || state.gearbox.speed;
+  var conclusionText = document.getElementById('conclusion-text').value || state.conclusion.text;
 
-  var W = 210, M = 18, CW = W - M * 2;
-  var y = M;
+  function newPage() { doc.addPage(); y = M; }
+  function checkY(needed) { if (y + needed > 280) newPage(); }
 
-  // Header bar
-  doc.setFillColor(26, 26, 24);
-  doc.rect(0, 0, W, 30, 'F');
+  // ── Cover page ──
+  doc.setFillColor(26,26,24);
+  doc.rect(0,0,W,55,'F');
+  doc.setFillColor(192,40,30);
+  doc.rect(0,52,W,4,'F');
+
   doc.setTextColor(255,255,255);
-  doc.setFontSize(15); doc.setFont('helvetica','bold');
-  doc.text('Gear Diagnostics', M, 13);
-  doc.setFontSize(9); doc.setFont('helvetica','normal');
-  doc.text('Inspection Report', M, 21);
-  doc.text('Generated: ' + new Date().toLocaleDateString('en-GB'), W - M, 21, { align: 'right' });
-  y = 40;
+  doc.setFontSize(22); doc.setFont('helvetica','bold');
+  doc.text('Wikov Gear', M, 22);
+  doc.setFontSize(13); doc.setFont('helvetica','normal');
+  doc.text('Refurbishment Department', M, 30);
+  doc.setFontSize(18); doc.setFont('helvetica','bold');
+  doc.text('Inspection Report', M, 44);
 
-  function secBar(title) {
-    doc.setFillColor(244, 242, 238);
-    doc.rect(M, y, CW, 7, 'F');
-    doc.setTextColor(100,100,96);
-    doc.setFontSize(7.5); doc.setFont('helvetica','bold');
-    doc.text(title.toUpperCase(), M + 3, y + 5);
-    y += 11;
-  }
+  y = 68;
+  doc.setTextColor(26,26,24);
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text('PROJECT:', M, y); doc.setFont('helvetica','normal');
+  doc.text(overviewProject || '—', M + 30, y);
+  y += 8;
+  doc.setFont('helvetica','bold'); doc.text('Customer:', M, y); doc.setFont('helvetica','normal');
+  doc.text(overviewCustomer || '—', M + 30, y);
+  y += 8;
+  doc.setFont('helvetica','bold'); doc.text('Date:', M, y); doc.setFont('helvetica','normal');
+  doc.text(overviewDate, M + 30, y);
+  y += 8;
+  doc.setFont('helvetica','bold'); doc.text('Contact:', M, y); doc.setFont('helvetica','normal');
+  doc.text((overviewContact || '—') + (overviewEmail ? '  |  ' + overviewEmail : ''), M + 30, y);
+  y += 16;
 
-  function twoCol(l1, v1, l2, v2) {
-    var hw = CW / 2 - 4;
-    doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(130,130,126);
-    doc.text(l1, M, y);
-    doc.text(l2, M + CW/2, y);
-    doc.setFontSize(11); doc.setFont('helvetica','normal'); doc.setTextColor(26,26,24);
-    doc.text(String(v1), M, y + 5);
-    doc.text(String(v2), M + CW/2, y + 5);
-    y += 13;
-  }
-
-  // Section: details
-  secBar('Report details');
-  twoCol('Technician', techName, 'Date', repDate);
-  twoCol('Equipment ID', gearId, 'Location / site', location);
-
-  // Section: fault
-  secBar('Fault description');
-  var lines = doc.splitTextToSize(fault, CW - 4);
-  doc.setFontSize(11); doc.setFont('helvetica','normal'); doc.setTextColor(26,26,24);
-  doc.text(lines, M + 2, y);
-  y += lines.length * 5.5 + 5;
-
-  // Severity badge
-  var sevPalette = {
-    'Low':      { bg:[232,244,224], text:[45,92,30]  },
-    'Medium':   { bg:[254,243,226], text:[122,79,5]  },
-    'High':     { bg:[253,238,230], text:[122,46,13] },
-    'Critical': { bg:[252,232,232], text:[122,26,26] },
-    '—':        { bg:[235,235,235], text:[80,80,80]  }
-  };
-  var pal = sevPalette[sev] || sevPalette['—'];
-  doc.setFillColor(pal.bg[0], pal.bg[1], pal.bg[2]);
-  doc.roundedRect(M, y, 34, 8, 2, 2, 'F');
-  doc.setTextColor(pal.text[0], pal.text[1], pal.text[2]);
-  doc.setFontSize(9); doc.setFont('helvetica','bold');
-  doc.text(sev, M + 17, y + 5.5, { align: 'center' });
-  y += 14;
-
-  // Section: checklist
-  secBar('Checklist');
-  document.querySelectorAll('.chk-row').forEach(function(row) {
-    var label = row.dataset.item;
-    var active = row.querySelector('.chk-btn.pass, .chk-btn.fail, .chk-btn.na');
-    var status = active ? active.textContent.trim() : '—';
-    var statusColors = { 'Pass':[45,92,30], 'Fail':[122,26,26], 'N/A':[90,90,90], '—':[160,160,160] };
-    var sc = statusColors[status] || [160,160,160];
-
-    doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(26,26,24);
-    doc.text(label, M + 2, y);
-    doc.setTextColor(sc[0],sc[1],sc[2]); doc.setFont('helvetica','bold');
-    doc.text(status, W - M - 2, y, { align: 'right' });
-    y += 7;
-    doc.setDrawColor(220,220,216);
-    doc.line(M, y - 1.5, M + CW, y - 1.5);
+  // Gearbox spec box
+  doc.setFillColor(242,241,237);
+  doc.rect(M, y, CW, 36, 'F');
+  doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(100,100,96);
+  doc.text('GEARBOX SPECIFICATION', M+4, y+7);
+  doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(26,26,24);
+  var specs = [['Brand / Manufacturer', gbBrand],['Unit Type',gbType],['Serial No.',gbSerial],['Power [kW]',gbPower],['Input speed [rpm]',gbSpeed]];
+  var sy2 = y + 14;
+  specs.forEach(function(s, i) {
+    var col = i < 3 ? 0 : 1;
+    var row2 = i < 3 ? i : i - 3;
+    var cx = M + 4 + col * (CW/2);
+    doc.setFont('helvetica','bold'); doc.setTextColor(120,120,116); doc.setFontSize(8);
+    doc.text(s[0], cx, sy2 + row2*7);
+    doc.setFont('helvetica','normal'); doc.setTextColor(26,26,24); doc.setFontSize(10);
+    doc.text(s[1]||'—', cx + 42, sy2 + row2*7);
   });
-  y += 5;
+  y += 44;
 
-  // Section: photos
-  var filledPhotos = photos.filter(Boolean);
-  if (filledPhotos.length > 0) {
-    if (y > 215) { doc.addPage(); y = M; }
-    secBar('Photos');
-    var pw = (CW - 8) / 3;
-    var ph = pw * 0.75;
-    var px = M;
-    photos.forEach(function(pd, idx) {
-      if (!pd) return;
-      try {
-        var ext = pd.split(';')[0].split('/')[1].toUpperCase();
-        if (ext === 'JPEG') ext = 'JPEG';
-        doc.addImage(pd, ext, px, y, pw, ph, undefined, 'MEDIUM');
-        var cap = document.getElementById('cap' + idx).value;
-        if (cap) {
-          doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(110,110,106);
-          doc.text(cap, px + pw / 2, y + ph + 4, { align: 'center', maxWidth: pw });
-        }
-      } catch(err) {}
-      px += pw + 4;
+  // ── Section header helper ──
+  function secHeader(title) {
+    checkY(14);
+    doc.setFillColor(26,26,24);
+    doc.rect(M, y, CW, 8, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text(title.toUpperCase(), M+4, y+5.5);
+    y += 12;
+    doc.setTextColor(26,26,24);
+  }
+
+  function subHeader(title) {
+    checkY(10);
+    doc.setFillColor(242,241,237);
+    doc.rect(M, y, CW, 6.5, 'F');
+    doc.setTextColor(100,100,96);
+    doc.setFontSize(8); doc.setFont('helvetica','bold');
+    doc.text(title.toUpperCase(), M+3, y+4.5);
+    y += 9;
+    doc.setTextColor(26,26,24);
+  }
+
+  function recBadge(rec, bx, by) {
+    var colors = {
+      'Minimal': [[228,240,216],[45,92,26]],
+      'Mild':    [[255,248,225],[122,82,5]],
+      'Hard':    [[255,240,224],[122,50,16]],
+      'Critical':[[252,228,228],[122,26,26]]
+    };
+    var key = rec.includes('Minimal') ? 'Minimal' : rec.includes('Mild') ? 'Mild' : rec.includes('Hard') ? 'Hard' : rec.includes('Critical') ? 'Critical' : null;
+    if (!key) return;
+    var c = colors[key];
+    doc.setFillColor(c[0][0],c[0][1],c[0][2]);
+    var tw = doc.getTextWidth(rec) + 6;
+    doc.roundedRect(bx, by-4, tw, 6, 1.5, 1.5, 'F');
+    doc.setTextColor(c[1][0],c[1][1],c[1][2]);
+    doc.setFontSize(8); doc.setFont('helvetica','bold');
+    doc.text(rec, bx+3, by);
+    doc.setTextColor(26,26,24);
+  }
+
+  // ── Component sections ──
+  COMPONENTS.forEach(function(comp) {
+    var cs = state.components[comp.id];
+    var desc = document.getElementById('desc-'+comp.id) ? document.getElementById('desc-'+comp.id).value : cs.description;
+
+    secHeader(comp.label);
+
+    // Description
+    if (desc) {
+      checkY(16);
+      var dlines = doc.splitTextToSize(desc, CW-4);
+      doc.setFontSize(10); doc.setFont('helvetica','normal');
+      doc.text(dlines, M+2, y);
+      y += dlines.length * 5.2 + 5;
+    }
+
+    // Findings table
+    subHeader('Findings – ' + comp.label);
+    var colW = [CW*0.42, 14, 14, CW*0.40];
+    var hx = [M+2, M+colW[0]+6, M+colW[0]+22, M+colW[0]+36];
+
+    doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(140,140,136);
+    ['Item','Yes','No','Remarks'].forEach(function(h,i){ doc.text(h, hx[i], y); });
+    y += 2;
+    doc.setDrawColor(200,200,196); doc.line(M, y, M+CW, y); y += 4;
+
+    comp.findings.forEach(function(f) {
+      checkY(8);
+      var fstate = cs.findings[f];
+      var rem = document.getElementById('rem-'+comp.id+'_'+f.replace(/[^a-z0-9]/gi,'_'));
+      var remarks = rem ? rem.value : fstate.remarks;
+
+      doc.setFontSize(9.5); doc.setFont('helvetica','normal'); doc.setTextColor(26,26,24);
+      doc.text(f, hx[0], y);
+
+      if (fstate.yes) {
+        doc.setFillColor(228,240,216); doc.roundedRect(hx[1]-1,y-4,10,6,1,1,'F');
+        doc.setTextColor(45,92,26); doc.setFont('helvetica','bold'); doc.text('Y', hx[1]+1.5, y);
+      } else if (fstate.no) {
+        doc.setFillColor(252,228,228); doc.roundedRect(hx[2]-1,y-4,10,6,1,1,'F');
+        doc.setTextColor(122,26,26); doc.setFont('helvetica','bold'); doc.text('N', hx[2]+1.5, y);
+      }
+
+      if (remarks) {
+        doc.setFont('helvetica','normal'); doc.setTextColor(80,80,76); doc.setFontSize(9);
+        doc.text(remarks, hx[3], y, {maxWidth: colW[3]});
+      }
+
+      doc.setTextColor(26,26,24);
+      y += 7;
+      doc.setDrawColor(230,230,226); doc.line(M, y-2, M+CW, y-2);
     });
-    y += ph + 14;
+    y += 4;
+
+    // Recommendation
+    if (cs.recommendation) {
+      checkY(10);
+      doc.setFontSize(8.5); doc.setFont('helvetica','bold'); doc.setTextColor(120,120,116);
+      doc.text('WIKOV RECOMMENDATION', M+2, y);
+      recBadge(cs.recommendation, M+55, y);
+      y += 10;
+    }
+
+    // Photos
+    var hasPhotos = cs.photos.some(Boolean);
+    if (hasPhotos) {
+      checkY(50);
+      subHeader('Photos – ' + comp.label);
+      var pw = (CW - 8) / 3;
+      var ph = pw * 0.75;
+      var px = M;
+      cs.photos.forEach(function(pd, pi) {
+        if (!pd) return;
+        try {
+          var ext = pd.split(';')[0].split('/')[1].toUpperCase();
+          doc.addImage(pd, ext, px, y, pw, ph, undefined, 'MEDIUM');
+          var capEl = document.getElementById('cap-'+comp.id+'-'+pi);
+          var cap = capEl ? capEl.value : cs.captions[pi];
+          if (cap) {
+            doc.setFontSize(7.5); doc.setFont('helvetica','normal'); doc.setTextColor(110,110,106);
+            doc.text(cap, px+pw/2, y+ph+3.5, {align:'center', maxWidth: pw});
+          }
+        } catch(e) {}
+        px += pw + 4;
+      });
+      y += ph + 10;
+    }
+
+    y += 4;
+  });
+
+  // ── Bearings ──
+  secHeader('Bearings');
+  doc.setFontSize(10); doc.setFont('helvetica','normal');
+  doc.text('According to customer requirements, all marked bearings will be replaced with new ones.', M+2, y);
+  y += 8;
+  var replaceList = BEARING_ITEMS.filter(function(b){ return state.bearings[b].replace; });
+  if (replaceList.length > 0) {
+    doc.setFont('helvetica','bold'); doc.setFontSize(9);
+    doc.text('For replacement: ' + replaceList.join(', '), M+2, y);
+    y += 8;
   }
 
-  // Section: signature
-  if (sigHasData) {
-    if (y > 240) { doc.addPage(); y = M; }
-    secBar('Signature');
-    try {
-      doc.addImage(sigCanvas.toDataURL('image/png'), 'PNG', M, y, 85, 24);
-    } catch(e) {}
-    doc.setDrawColor(180,180,176);
-    doc.line(M, y + 28, M + 85, y + 28);
-    doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(130,130,126);
-    doc.text(techName, M, y + 33);
-    y += 38;
+  // ── Conclusion ──
+  checkY(20);
+  secHeader('Conclusion');
+  subHeader('Gearbox condition overview');
+
+  // Summary table
+  var groups = [
+    { name: 'Castings', items: COMPONENTS.slice(0,3) },
+    { name: 'Gears', items: COMPONENTS.slice(3) }
+  ];
+  groups.forEach(function(g) {
+    checkY(10);
+    doc.setFillColor(235,234,230); doc.rect(M,y,CW,6,'F');
+    doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(80,80,76);
+    doc.text(g.name, M+3, y+4.2);
+    y += 8;
+    g.items.forEach(function(comp) {
+      checkY(8);
+      var rec = state.components[comp.id].recommendation || '—';
+      doc.setFontSize(9.5); doc.setFont('helvetica','normal'); doc.setTextColor(26,26,24);
+      doc.text(comp.label, M+3, y);
+      if (rec !== '—') recBadge(rec, M+80, y);
+      y += 7;
+      doc.setDrawColor(230,230,226); doc.line(M,y-2,M+CW,y-2);
+    });
+    y += 3;
+  });
+
+  // Recommendation text
+  if (conclusionText) {
+    checkY(20);
+    y += 4;
+    doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(100,100,96);
+    doc.text('RECOMMENDATION', M+2, y); y += 6;
+    var rlines = doc.splitTextToSize(conclusionText, CW-4);
+    doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(26,26,24);
+    doc.text(rlines, M+2, y);
+    y += rlines.length * 5.5 + 6;
   }
 
-  // Footer
-  var totalPages = doc.internal.getNumberOfPages();
-  for (var p = 1; p <= totalPages; p++) {
+  // ── Sign-off ──
+  checkY(40);
+  y += 6;
+  doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(26,26,24);
+  doc.text('In ' + soLocation + '   ' + soDate, M, y); y += 10;
+  doc.text('On behalf of WIKOV Turbo GEARs s.r.o', M, y); y += 10;
+
+  var sigCanvas2 = document.getElementById('sig-canvas');
+  if (sigHasContent && sigCanvas2) {
+    try { doc.addImage(sigCanvas2.toDataURL('image/png'),'PNG',M,y,70,20); } catch(e){}
+    y += 24;
+  }
+  doc.setDrawColor(180,180,176); doc.line(M,y,M+80,y); y += 5;
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text(soName, M, y); y += 6;
+  doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(100,100,96);
+  doc.text(soTitle, M, y);
+
+  // Page footers
+  var total = doc.internal.getNumberOfPages();
+  for (var p = 1; p <= total; p++) {
     doc.setPage(p);
-    doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(180,180,175);
-    doc.text('Gear Diagnostics  |  ' + gearId + '  |  ' + repDate + '  |  Page ' + p + ' of ' + totalPages, W/2, 292, { align:'center' });
+    doc.setFontSize(7.5); doc.setFont('helvetica','normal'); doc.setTextColor(180,180,175);
+    doc.text('Wikov Gear  |  '+gbType+'  SN '+gbSerial+'  |  '+overviewDate+'  |  Page '+p+' of '+total, W/2, 292, {align:'center'});
   }
 
-  var fname = 'Diagnostics_' + gearId.replace(/\s+/g,'-') + '_' + repDate + '.pdf';
+  var fname = 'Wikov_Inspection_'+(gbType||'report').replace(/\s+/g,'-')+'_SN'+(gbSerial||'x')+'_'+overviewDate+'.pdf';
   doc.save(fname);
-  toast('PDF downloaded — share via Files or OneDrive');
+  toast('PDF saved — share via Files or OneDrive');
 }
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+buildUI();
 </script>
 </body>
 </html>
