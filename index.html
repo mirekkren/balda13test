@@ -147,6 +147,11 @@ canvas.sig-canvas { width: 100%; height: 100px; display: block; border: 0.5px so
 .btn-generate { flex: 1; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; background: var(--wikov-red); color: #fff; border: none; border-radius: var(--radius); padding: 13px; cursor: pointer; transition: opacity 0.15s; }
 
 /* Toast */
+.save-btns { max-width: 780px; margin: 0 auto 16px; padding: 0 14px; display: flex; gap: 8px; }
+.btn-save { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; background: transparent; border: 0.5px solid var(--border-mid); border-radius: var(--radius-sm); padding: 9px 16px; cursor: pointer; color: var(--muted); transition: all 0.15s; }
+.btn-save:hover { border-color: var(--accent); color: var(--accent); }
+.btn-load { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; background: transparent; border: 0.5px solid var(--border-mid); border-radius: var(--radius-sm); padding: 9px 16px; cursor: pointer; color: var(--muted); transition: all 0.15s; display: inline-block; }
+.btn-load:hover { border-color: var(--accent); color: var(--accent); }
 .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(10px); background: #1a1a18; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 14px; border-radius: 100px; padding: 10px 22px; opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; white-space: nowrap; z-index: 999; }
 .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -182,6 +187,11 @@ canvas.sig-canvas { width: 100%; height: 100px; display: block; border: 0.5px so
 <div class="nav-btns" id="nav-btns">
   <button class="btn-prev" id="btn-prev" onclick="goSection(-1)">← Back</button>
   <button class="btn-next" id="btn-next" onclick="goSection(1)">Next →</button>
+</div>
+<div class="save-btns">
+  <button class="btn-save" onclick="saveJSON()">⬇ Save report</button>
+  <label class="btn-load" for="load-input">⬆ Load report</label>
+  <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadJSON(event)">
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1043,6 +1053,207 @@ function makePDF() {
   var fname = 'Wikov_Inspection_'+(gbType||'report').replace(/\s+/g,'-')+'_SN'+(gbSerial||'x')+'_'+overviewDate+'.pdf';
   doc.save(fname);
   toast('PDF saved — share via Files or OneDrive');
+}
+
+// ─────────────────────────────────────────────
+// SAVE / LOAD
+// ─────────────────────────────────────────────
+
+function collectFormValues() {
+  // Snapshot all live DOM input values into state before saving
+  // Overview
+  ['tech-name-unused'].forEach(function(){ }); // placeholder
+  var fields = {
+    'project': 'overview.project',
+    'customer': 'overview.customer',
+    'rep-date': 'overview.date',
+    'contact-name': 'overview.contact',
+    'contact-phone': 'overview.contact_phone',
+    'contact-email': 'overview.contact_email',
+    'gb-brand': 'gearbox.brand',
+    'gb-type': 'gearbox.type',
+    'gb-serial': 'gearbox.serial',
+    'gb-power': 'gearbox.power',
+    'gb-speed': 'gearbox.speed',
+    'so-location': 'signoff.location',
+    'so-date': 'signoff.date',
+    'so-name': 'signoff.name',
+    'so-title': 'signoff.title',
+    'conclusion-text': 'conclusion.text'
+  };
+  Object.keys(fields).forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var parts = fields[id].split('.');
+    if (state[parts[0]]) state[parts[0]][parts[1]] = el.value;
+  });
+  // Component descriptions and remarks
+  COMPONENTS.forEach(function(comp) {
+    var descEl = document.getElementById('desc-' + comp.id);
+    if (descEl) state.components[comp.id].description = descEl.value;
+    comp.findings.forEach(function(f) {
+      var fid = comp.id + '_' + f.replace(/[^a-z0-9]/gi,'_');
+      var remEl = document.getElementById('rem-' + fid);
+      if (remEl) state.components[comp.id].findings[f].remarks = remEl.value;
+    });
+    // Captions
+    for (var pi = 0; pi < 3; pi++) {
+      var capEl = document.getElementById('cap-' + comp.id + '-' + pi);
+      if (capEl) state.components[comp.id].captions[pi] = capEl.value;
+    }
+  });
+}
+
+function saveJSON() {
+  collectFormValues();
+  // Build a clean save object — exclude photo data by default (keeps file small)
+  // but include a flag so user knows photos aren't saved
+  var saveState = JSON.parse(JSON.stringify(state));
+  // Photos can be large — ask user or just include them
+  // For now include photos (base64) so report is fully self-contained
+  var payload = {
+    version: 1,
+    savedAt: new Date().toISOString(),
+    state: saveState
+  };
+  var json = JSON.stringify(payload, null, 2);
+  var blob = new Blob([json], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  var gearType = (document.getElementById('gb-type') || {}).value || 'report';
+  var serial = (document.getElementById('gb-serial') || {}).value || 'x';
+  var date = (document.getElementById('rep-date') || {}).value || new Date().toISOString().split('T')[0];
+  a.href = url;
+  a.download = 'Wikov_' + gearType.replace(/\s+/g,'-') + '_SN' + serial + '_' + date + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Report saved as JSON');
+}
+
+function loadJSON(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var payload = JSON.parse(ev.target.result);
+      var loaded = payload.state || payload; // support both wrapped and raw state
+      // Merge loaded state into current state carefully
+      if (loaded.overview)    Object.assign(state.overview, loaded.overview);
+      if (loaded.gearbox)     Object.assign(state.gearbox, loaded.gearbox);
+      if (loaded.conclusion)  Object.assign(state.conclusion, loaded.conclusion);
+      if (loaded.signoff)     Object.assign(state.signoff, loaded.signoff);
+      if (loaded.bearings)    Object.assign(state.bearings, loaded.bearings);
+      if (loaded.components) {
+        Object.keys(loaded.components).forEach(function(cid) {
+          if (state.components[cid]) {
+            Object.assign(state.components[cid], loaded.components[cid]);
+          }
+        });
+      }
+      // Rebuild UI with loaded data
+      buildSections();
+      updateNav();
+      restoreFormValues();
+      toast('Report loaded — ' + (payload.savedAt ? 'saved ' + payload.savedAt.split('T')[0] : ''));
+    } catch(err) {
+      toast('Error loading file — invalid JSON');
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+  // Reset input so same file can be loaded again
+  e.target.value = '';
+}
+
+function restoreFormValues() {
+  // Push state back into DOM inputs after rebuild
+  var fieldMap = {
+    'project':       state.overview.project,
+    'customer':      state.overview.customer,
+    'rep-date':      state.overview.date,
+    'contact-name':  state.overview.contact,
+    'contact-phone': state.overview.contact_phone,
+    'contact-email': state.overview.contact_email,
+    'gb-brand':      state.gearbox.brand,
+    'gb-type':       state.gearbox.type,
+    'gb-serial':     state.gearbox.serial,
+    'gb-power':      state.gearbox.power,
+    'gb-speed':      state.gearbox.speed,
+    'so-location':   state.signoff.location,
+    'so-date':       state.signoff.date,
+    'so-name':       state.signoff.name,
+    'so-title':      state.signoff.title,
+    'conclusion-text': state.conclusion.text
+  };
+  Object.keys(fieldMap).forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && fieldMap[id]) el.value = fieldMap[id];
+  });
+
+  // Component descriptions, remarks, captions, photos
+  COMPONENTS.forEach(function(comp) {
+    var cs = state.components[comp.id];
+    var descEl = document.getElementById('desc-' + comp.id);
+    if (descEl && cs.description) descEl.value = cs.description;
+
+    comp.findings.forEach(function(f) {
+      var fid = comp.id + '_' + f.replace(/[^a-z0-9]/gi,'_');
+      var fs = cs.findings[f];
+      if (!fs) return;
+      // Restore Y/N button states
+      var yBtn = document.getElementById('yn-yes-' + fid);
+      var nBtn = document.getElementById('yn-no-' + fid);
+      if (yBtn) yBtn.classList.toggle('active', !!fs.yes);
+      if (nBtn) nBtn.classList.toggle('active', !!fs.no);
+      // Restore remarks
+      var remEl = document.getElementById('rem-' + fid);
+      if (remEl && fs.remarks) remEl.value = fs.remarks;
+    });
+
+    // Restore recommendations
+    if (cs.recommendation) {
+      var recBtns = document.querySelectorAll('[data-comp="'+comp.id+'"]');
+      recBtns.forEach(function(btn) {
+        btn.className = 'rec-btn';
+        if (btn.dataset.rec === cs.recommendation) {
+          var cls = cs.recommendation.includes('Minimal') ? 'sel-minimal'
+                  : cs.recommendation.includes('Mild')    ? 'sel-mild'
+                  : cs.recommendation.includes('Hard')    ? 'sel-hard' : 'sel-critical';
+          btn.classList.add(cls);
+        }
+      });
+    }
+
+    // Restore photos
+    cs.photos.forEach(function(pd, pi) {
+      if (!pd) return;
+      var slot = document.getElementById('ps-' + comp.id + '-' + pi);
+      if (!slot) return;
+      slot.classList.add('filled');
+      var img = slot.querySelector('img');
+      if (!img) { img = document.createElement('img'); slot.appendChild(img); }
+      img.src = pd;
+      var plus = slot.querySelector('.photo-plus');
+      var txt  = slot.querySelector('.photo-add-text');
+      if (plus) plus.style.display = 'none';
+      if (txt)  txt.style.display  = 'none';
+      var capEl = document.getElementById('cap-' + comp.id + '-' + pi);
+      if (capEl && cs.captions[pi]) capEl.value = cs.captions[pi];
+    });
+  });
+
+  // Restore bearings
+  BEARING_ITEMS.forEach(function(b) {
+    var bid = b.replace(/[^a-z0-9]/gi,'_');
+    var btn = document.getElementById('br-' + bid);
+    if (btn && state.bearings[b] && state.bearings[b].replace) {
+      btn.classList.add('active');
+    }
+  });
+
+  // Re-init signature (can't restore drawn sig from JSON easily, that's OK)
+  initSig();
 }
 
 // ─────────────────────────────────────────────
