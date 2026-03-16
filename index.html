@@ -712,7 +712,8 @@ function makePDF() {
   doc.setFontSize(10); doc.setFont('helvetica','bold');
   doc.text('Inspection Report', M+27.5, 130.8, {align:'center'});
 
-  y = 162;
+  // Project details on page 2
+  doc.addPage(); y = 28;
   doc.setTextColor(26,26,24);
   doc.setFontSize(11); doc.setFont('helvetica','bold');
   doc.text('PROJECT:', M, y); doc.setFont('helvetica','normal');
@@ -949,9 +950,9 @@ function makePDF() {
   }
   doc.setDrawColor(180,180,176); doc.line(M,y,M+80,y); y += 5;
   doc.setFontSize(11); doc.setFont('helvetica','bold');
-  try { doc.text(soName, M, y); } catch(e) { doc.text(soName.normalize('NFD').replace(/[\u0300-\u036f]/g,''), M, y); } y += 6;
+  var safeName = soName.normalize ? soName.normalize('NFD').replace(/[\u0300-\u036f]/g,'') : soName; doc.text(safeName, M, y); y += 6;
   doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(100,100,96);
-  doc.text(soTitle, M, y);
+  var safeTitle = soTitle.normalize ? soTitle.normalize('NFD').replace(/[\u0300-\u036f]/g,'') : soTitle; doc.text(safeTitle, M, y);
 
   // ── Headers & Footers on all pages except cover (page 1) ──
   var total = doc.internal.getNumberOfPages();
@@ -993,21 +994,21 @@ function makePDF() {
 
     // ── Footer ──
     var fY = 284;
-    // Footer divider line
-    doc.setDrawColor(192,40,30); doc.setLineWidth(0.7);
-    doc.line(M, fY, W-M, fY);
-    doc.setLineWidth(0.2); doc.setDrawColor(200,200,196);
-    // Page badge — flush right, above line
+    // Footer: badge first (sits above the line, right-aligned)
     doc.setFillColor(192,40,30);
-    doc.rect(W-M-16, fY-8, 18, 8, 'F');
-    doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
-    doc.text(p+' / '+total, W-M-7, fY-2.5, {align:'center'});
-    // Footer text row
+    doc.rect(W-M-17, 278, 19, 8, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont('helvetica','bold');
+    doc.text(p + ' / ' + total, W-M-8, 283.5, {align:'center'});
+    // Footer divider line — from left margin to right margin
+    doc.setDrawColor(192,40,30); doc.setLineWidth(0.7);
+    doc.line(M, 287, W-M, 287);
+    doc.setLineWidth(0.2); doc.setDrawColor(200,200,196);
+    // Footer text row below line
     doc.setFontSize(7.5); doc.setFont('helvetica','normal'); doc.setTextColor(30,77,140);
-    doc.text('Wikov TurboGear s.r.o.', M, fY+5);
-    doc.text('www.wikov.com', W/2, fY+5, {align:'center'});
+    doc.text('Wikov TurboGear s.r.o.', M, 292);
+    doc.text('www.wikov.com', W/2, 292, {align:'center'});
     doc.setFont('helvetica','bold'); doc.setTextColor(26,26,24);
-    doc.text('CONFIDENTIAL DOCUMENT!', W-M, fY+5, {align:'right'});
+    doc.text('CONFIDENTIAL DOCUMENT!', W-M, 292, {align:'right'});
   }
 
   var fname = 'Wikov_Inspection_'+(gbType||'report').replace(/\s+/g,'-')+'_SN'+(gbSerial||'x')+'_'+overviewDate+'.pdf';
