@@ -790,8 +790,9 @@ function makePDF() {
     doc.setTextColor(26,26,24);
   }
 
-  // ── Component sections ──
+  // ── Component sections — one page each ──
   COMPONENTS.forEach(function(comp) {
+    doc.addPage(); y = 28;
     var cs = state.components[comp.id];
     var desc = document.getElementById('desc-'+comp.id) ? document.getElementById('desc-'+comp.id).value : cs.description;
 
@@ -910,6 +911,7 @@ function makePDF() {
   });
 
   // ── Bearings ──
+  doc.addPage(); y = 28;
   secHeader('Bearings');
   doc.setFontSize(10); doc.setFont('helvetica','normal');
   doc.text('According to customer requirements, all marked bearings will be replaced with new ones.', M+2, y);
@@ -922,7 +924,7 @@ function makePDF() {
   }
 
   // ── Conclusion ──
-  checkY(20);
+  doc.addPage(); y = 28;
   secHeader('Conclusion');
   subHeader('Gearbox condition overview');
 
@@ -962,7 +964,7 @@ function makePDF() {
   }
 
   // ── Sign-off ──
-  checkY(40);
+  doc.addPage(); y = 28;
   y += 6;
   doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(26,26,24);
   doc.text('In ' + soLocation + '   ' + soDate, M, y); y += 10;
