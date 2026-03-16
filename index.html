@@ -803,7 +803,7 @@ function makePDF() {
       checkY(16);
       var dlines = doc.splitTextToSize(desc, CW-4);
       doc.setFontSize(10); doc.setFont('helvetica','normal');
-      doc.text(dlines, M+2, y);
+      doc.text(dlines, M+2, y+4);
       y += dlines.length * 5.2 + 5;
     }
 
@@ -821,10 +821,10 @@ function makePDF() {
 
     // Column headers
     doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(150,150,146);
-    doc.text('Item',    itemX, y);
-    doc.text('Yes',     yesX,  y, {align:'center'});
-    doc.text('No',      noX,   y, {align:'center'});
-    doc.text('Remarks', remX,  y);
+    doc.text('Item',    itemX, y+3);
+    doc.text('Yes',     yesX,  y+3, {align:'center'});
+    doc.text('No',      noX,   y+3, {align:'center'});
+    doc.text('Remarks', remX,  y+3);
     y += 2;
     doc.setDrawColor(180,180,176); doc.setLineWidth(0.4);
     doc.line(M, y, M+CW, y);
@@ -838,7 +838,7 @@ function makePDF() {
       var remarks = rem ? rem.value : fstate.remarks;
 
       // Row mid-line (text baseline sits here)
-      var mid = y + ROW_H * 0.45;
+      var mid = y + ROW_H * 0.62;
 
       // Item text — vertically centred in row
       doc.setFontSize(9.5); doc.setFont('helvetica','normal'); doc.setTextColor(26,26,24);
@@ -935,20 +935,22 @@ function makePDF() {
   ];
   groups.forEach(function(g) {
     checkY(10);
-    doc.setFillColor(235,234,230); doc.rect(M,y,CW,6,'F');
+    doc.setFillColor(235,234,230); doc.rect(M,y,CW,7,'F');
     doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(80,80,76);
-    doc.text(g.name, M+3, y+4.2);
-    y += 8;
+    doc.text(g.name, M+3, y+4.8);
+    y += 9;
     g.items.forEach(function(comp) {
-      checkY(8);
-      var rec = state.components[comp.id].recommendation || '—';
+      var rec = state.components[comp.id].recommendation || '';
+      var rh = 9;
+      var mid = y + rh * 0.62;
       doc.setFontSize(9.5); doc.setFont('helvetica','normal'); doc.setTextColor(26,26,24);
-      doc.text(comp.label, M+3, y);
-      if (rec !== '—') recBadge(rec, M+80, y);
-      y += 7;
-      doc.setDrawColor(230,230,226); doc.line(M,y-2,M+CW,y-2);
+      doc.text(comp.label, M+3, mid);
+      if (rec) recBadge(rec, M+80, mid);
+      y += rh;
+      doc.setDrawColor(220,220,216); doc.setLineWidth(0.2);
+      doc.line(M, y, M+CW, y);
     });
-    y += 3;
+    y += 4;
   });
 
   // Recommendation text
