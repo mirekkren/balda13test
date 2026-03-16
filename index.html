@@ -808,44 +808,69 @@ function makePDF() {
 
     // Findings table
     subHeader('Findings – ' + comp.label);
-    var colW = [CW*0.42, 14, 14, CW*0.40];
-    var hx = [M+2, M+colW[0]+6, M+colW[0]+22, M+colW[0]+36];
+    // Column x positions: Item | Yes-badge | No-badge | Remarks
+    var itemX    = M + 2;
+    var yesX     = M + CW * 0.50;   // centre of Yes column
+    var noX      = M + CW * 0.62;   // centre of No column
+    var remX     = M + CW * 0.70;
+    var remW     = CW * 0.29;
+    var ROW_H    = 9;                // mm per row
+    var BADGE_H  = 5.5;             // badge height mm
+    var BADGE_W  = 10;              // badge width mm
 
-    doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(140,140,136);
-    ['Item','Yes','No','Remarks'].forEach(function(h,i){ doc.text(h, hx[i], y); });
+    // Column headers
+    doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(150,150,146);
+    doc.text('Item',    itemX, y);
+    doc.text('Yes',     yesX,  y, {align:'center'});
+    doc.text('No',      noX,   y, {align:'center'});
+    doc.text('Remarks', remX,  y);
     y += 2;
-    doc.setDrawColor(200,200,196); doc.line(M, y, M+CW, y); y += 4;
+    doc.setDrawColor(180,180,176); doc.setLineWidth(0.4);
+    doc.line(M, y, M+CW, y);
+    doc.setLineWidth(0.2);
+    y += 4;
 
     comp.findings.forEach(function(f) {
-      checkY(8);
+      checkY(ROW_H + 2);
       var fstate = cs.findings[f];
       var rem = document.getElementById('rem-'+comp.id+'_'+f.replace(/[^a-z0-9]/gi,'_'));
       var remarks = rem ? rem.value : fstate.remarks;
 
+      // Row mid-line (text baseline sits here)
+      var mid = y + ROW_H * 0.45;
+
+      // Item text — vertically centred in row
       doc.setFontSize(9.5); doc.setFont('helvetica','normal'); doc.setTextColor(26,26,24);
-      doc.text(f, hx[0], y);
+      doc.text(f, itemX, mid);
 
+      // Yes badge (red = problem)
       if (fstate.yes) {
-        // Yes = problem = red
-        doc.setFillColor(252,228,228); doc.roundedRect(hx[1]-1,y-4,10,6,1,1,'F');
-        doc.setTextColor(122,26,26); doc.setFont('helvetica','bold'); doc.text('Y', hx[1]+1.5, y);
+        doc.setFillColor(252,228,228);
+        doc.roundedRect(yesX - BADGE_W/2, mid - BADGE_H + 1, BADGE_W, BADGE_H, 1, 1, 'F');
+        doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(150,26,26);
+        doc.text('Y', yesX, mid, {align:'center'});
       }
+
+      // No badge (green = OK)
       if (fstate.no) {
-        // No = OK = green
-        doc.setFillColor(228,240,216); doc.roundedRect(hx[2]-1,y-4,10,6,1,1,'F');
-        doc.setTextColor(45,92,26); doc.setFont('helvetica','bold'); doc.text('N', hx[2]+1.5, y);
+        doc.setFillColor(228,240,216);
+        doc.roundedRect(noX - BADGE_W/2, mid - BADGE_H + 1, BADGE_W, BADGE_H, 1, 1, 'F');
+        doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(45,92,26);
+        doc.text('N', noX, mid, {align:'center'});
       }
 
+      // Remarks text
       if (remarks) {
-        doc.setFont('helvetica','normal'); doc.setTextColor(80,80,76); doc.setFontSize(9);
-        doc.text(remarks, hx[3], y, {maxWidth: colW[3]});
+        doc.setFont('helvetica','normal'); doc.setTextColor(80,80,76); doc.setFontSize(8.5);
+        doc.text(remarks, remX, mid, {maxWidth: remW});
       }
 
-      doc.setTextColor(26,26,24);
-      y += 7;
-      doc.setDrawColor(230,230,226); doc.line(M, y-2, M+CW, y-2);
+      // Divider line at bottom of row
+      y += ROW_H;
+      doc.setDrawColor(220,220,216); doc.setLineWidth(0.2);
+      doc.line(M, y, M+CW, y);
     });
-    y += 4;
+    y += 5;
 
     // Recommendation
     if (cs.recommendation) {
