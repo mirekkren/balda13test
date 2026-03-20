@@ -1,4 +1,4 @@
-var CACHE = 'wikov-inspect-v9.9';
+var CACHE = 'wikov-inspect-v10.0';
 var ASSETS = [
   './',
   './index.html',
@@ -14,7 +14,6 @@ self.addEventListener('install', function(e) {
       });
     })
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', function(e) {
@@ -29,12 +28,17 @@ self.addEventListener('activate', function(e) {
   self.clients.claim();
 });
 
+self.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener('fetch', function(e) {
   if (e.request.method !== 'GET') return;
   e.respondWith(
     caches.match(e.request).then(function(cached) {
-      if (cached) return cached;
-      return fetch(e.request).then(function(response) {
+      var fetchPromise = fetch(e.request).then(function(response) {
         if (!response || response.status !== 200) return response;
         var clone = response.clone();
         caches.open(CACHE).then(function(cache) {
@@ -42,8 +46,9 @@ self.addEventListener('fetch', function(e) {
         });
         return response;
       }).catch(function() {
-        return caches.match('./index.html');
+        return cached || caches.match('./index.html');
       });
+      return cached || fetchPromise;
     })
   );
 });
