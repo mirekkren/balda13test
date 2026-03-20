@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Wikov Gear – Inspection Report</title>
+<meta name="theme-color" content="#00325D">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wikov Inspect">
+<link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -175,7 +181,7 @@ canvas.sig-canvas { width: 100%; height: 100px; display: block; border: 0.5px so
         <div class="logo-sub">Inspection Report</div>
       </div>
     </div>
-    <div style="margin-left:auto; background:rgba(255,255,255,0.12); border-radius:6px; padding:3px 10px; font-size:11px; font-family:'DM Mono',monospace; color:rgba(255,255,255,0.7); letter-spacing:0.05em;">v9.8</div>
+    <div style="margin-left:auto; background:rgba(255,255,255,0.12); border-radius:6px; padding:3px 10px; font-size:11px; font-family:'DM Mono',monospace; color:rgba(255,255,255,0.7); letter-spacing:0.05em;">v9.9</div>
   </div>
   <div class="header-progress"><div class="progress-bar" id="progress-bar"></div></div>
   <nav class="section-nav" id="section-nav"></nav>
@@ -1189,9 +1195,12 @@ function makePDF() {
     doc.text('CONFIDENTIAL DOCUMENT!', W-M, 292, {align:'right'});
   }
 
-  var fname = 'Wikov_Inspection_'+(gbType||'report').replace(/\s+/g,'-')+'_SN'+(gbSerial||'x')+'_'+overviewDate+'.pdf';
-  doc.save(fname);
-  toast('PDF saved — share via Files or OneDrive');
+  var pdfSuggested = 'Wikov_Inspection_'+(gbType||'report').replace(/\s+/g,'-')+'_SN'+(gbSerial||'x')+'_'+overviewDate;
+  var pdfName = prompt('Save PDF as:', pdfSuggested);
+  if (!pdfName) return;
+  pdfName = pdfName.replace(/\.pdf$/i,'').trim() || pdfSuggested;
+  doc.save(pdfName + '.pdf');
+  toast('PDF saved: ' + pdfName + '.pdf');
 }
 
 // ─────────────────────────────────────────────
@@ -1262,18 +1271,23 @@ function saveJSON() {
     savedAt: new Date().toISOString(),
     state: saveState
   };
+  var gearType = (document.getElementById('gb-type') || {}).value || 'report';
+  var serial   = (document.getElementById('gb-serial') || {}).value || 'x';
+  var date     = (document.getElementById('rep-date') || {}).value || new Date().toISOString().split('T')[0];
+  var suggested = 'Wikov_' + (gearType||'report').replace(/\s+/g,'-') + '_SN' + serial + '_' + date;
+  var fname = prompt('Save report as:', suggested);
+  if (!fname) return; // cancelled
+  fname = fname.replace(/\.json$/i,'').trim() || suggested;
+
   var json = JSON.stringify(payload, null, 2);
   var blob = new Blob([json], { type: 'application/json' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
-  var gearType = (document.getElementById('gb-type') || {}).value || 'report';
-  var serial = (document.getElementById('gb-serial') || {}).value || 'x';
-  var date = (document.getElementById('rep-date') || {}).value || new Date().toISOString().split('T')[0];
   a.href = url;
-  a.download = 'Wikov_' + gearType.replace(/\s+/g,'-') + '_SN' + serial + '_' + date + '.json';
+  a.download = fname + '.json';
   a.click();
   URL.revokeObjectURL(url);
-  toast('Report saved as JSON');
+  toast('Saved: ' + fname + '.json');
 }
 
 function loadJSON(e) {
@@ -1429,6 +1443,40 @@ function restoreFormValues() {
 // INIT
 // ─────────────────────────────────────────────
 buildUI();
+</script>
+<div id="ios-install-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#00325D;color:#fff;padding:12px 16px;z-index:9999;font-family:'DM Sans',sans-serif;font-size:13px;display:flex;align-items:center;gap:12px;">
+  <div style="flex:1">To install: tap the <strong>Share</strong> button then <strong>"Add to Home Screen"</strong></div>
+  <button onclick="document.getElementById('ios-install-banner').style.display='none'" style="background:rgba(255,255,255,0.2);border:none;color:#fff;border-radius:6px;padding:6px 12px;font-family:inherit;cursor:pointer;">✕</button>
+</div>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').then(function(reg) {
+      console.log('SW registered');
+    }).catch(function(e) { console.log('SW error', e); });
+  });
+}
+var isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+var isInStandalone = window.navigator.standalone;
+if (isIos && !isInStandalone) {
+  setTimeout(function() {
+    var b = document.getElementById('ios-install-banner');
+    if (b) b.style.display = 'flex';
+  }, 3000);
+}
+var deferredPrompt;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  var btn = document.createElement('button');
+  btn.textContent = '📲 Install app';
+  btn.style.cssText = 'position:fixed;bottom:16px;right:16px;background:#00325D;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:500;cursor:pointer;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,0.2)';
+  btn.onclick = function() {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function() { btn.remove(); });
+  };
+  document.body.appendChild(btn);
+});
 </script>
 </body>
 </html>
