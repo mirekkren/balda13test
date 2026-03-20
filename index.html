@@ -175,7 +175,7 @@ canvas.sig-canvas { width: 100%; height: 100px; display: block; border: 0.5px so
         <div class="logo-sub">Inspection Report</div>
       </div>
     </div>
-    <div style="margin-left:auto; background:rgba(255,255,255,0.12); border-radius:6px; padding:3px 10px; font-size:11px; font-family:'DM Mono',monospace; color:rgba(255,255,255,0.7); letter-spacing:0.05em;">v9.5</div>
+    <div style="margin-left:auto; background:rgba(255,255,255,0.12); border-radius:6px; padding:3px 10px; font-size:11px; font-family:'DM Mono',monospace; color:rgba(255,255,255,0.7); letter-spacing:0.05em;">v9.6</div>
   </div>
   <div class="header-progress"><div class="progress-bar" id="progress-bar"></div></div>
   <nav class="section-nav" id="section-nav"></nav>
@@ -1124,7 +1124,7 @@ function makePDF() {
 
     // ── Watermark — clean transparent Wikov logo, faded ──
     try {
-      var wmSize = 80;
+      var wmSize = 160;
       var wmX = (W - wmSize) / 2;
       var wmY = (297 - wmSize) / 2;
       doc.setGState(new doc.GState({opacity: 0.08}));
